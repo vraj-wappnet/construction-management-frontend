@@ -29,6 +29,7 @@ import Profile from "../views/users/Profile.vue";
 import CreateMaterial from "../views/materials/CreateMaterial.vue";
 import MaterialDetail from "../views/materials/MaterialDetail.vue";
 import Materials from "../views/materials/Materials.vue";
+import Documents from "../views/documents/Documents.vue";
 
 // Define routes
 const routes: RouteRecordRaw[] = [
@@ -160,6 +161,15 @@ const routes: RouteRecordRaw[] = [
     name: ":CreateMaterial",
     component: CreateMaterial,
     meta: { requiresAuth: true, roles: ["contractor", "site_engineer"] },
+  },
+  {
+    path: "/projects/:projectId/documents",
+    name: "Documents",
+    component: Documents,
+    meta: {
+      requiresAuth: true,
+      roles: ["admin", "site_engineer", "contractor", "client"],
+    },
   },
 ];
 

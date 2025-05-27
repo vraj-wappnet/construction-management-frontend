@@ -93,7 +93,6 @@ const logout = () => {
 </script>
 
 <template>
-  <!-- Mobile Sidebar -->
   <div
     v-if="isMobile && isSidebarOpen"
     class="fixed inset-x-0 top-16 bottom-0 z-40 transition-transform duration-300"

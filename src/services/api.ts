@@ -91,7 +91,9 @@ export const projectService = {
   },
 
   async assignSiteEngineer(projectId: number, siteEngineerId: number) {
-    return await apiClient.post(`/projects/${projectId}/assign-site-engineer/${siteEngineerId}`);
+    return await apiClient.post(
+      `/projects/${projectId}/assign-site-engineer/${siteEngineerId}`
+    );
   },
 };
 
@@ -142,24 +144,18 @@ export const materialService = {
 };
 
 // Document service
+
 export const documentService = {
-  getDocuments(projectId: string) {
-    return apiClient.get(`/projects/${projectId}/documents`);
+  async getDocuments(projectId: string) {
+    return await apiClient.get(`/projects/${projectId}/documents`);
   },
-  getDocumentVersions(projectId: string, id: string) {
-    return apiClient.get(`/projects/${projectId}/documents/${id}/versions`);
-  },
-  getLatestVersion(projectId: string, id: string) {
-    return apiClient.get(`/projects/${projectId}/documents/${id}/latest`);
-  },
-  createDocument(projectId: string, document: any) {
-    return apiClient.post(`/projects/${projectId}/documents`, document);
-  },
-  addDocumentVersion(projectId: string, id: string, version: any) {
-    return apiClient.post(
-      `/projects/${projectId}/documents/${id}/versions`,
-      version
-    );
+
+  async createDocument(projectId: string, formData: FormData) {
+    return await apiClient.post(`/projects/${projectId}/documents`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
   },
 };
 
@@ -208,7 +204,6 @@ export const userService = {
   },
 };
 
-
 export const profileService = {
   getUserProfile() {
     return apiClient.get("/users/me");
@@ -216,4 +211,4 @@ export const profileService = {
   updateProfile(data: any) {
     return apiClient.patch("/users/me", data);
   },
-}
+};

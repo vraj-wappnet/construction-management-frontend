@@ -1,12 +1,32 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { ref, computed, onMounted, watch } from "vue";
+import { useRoute } from "vue-router";
 import { useAuthStore } from "../../stores/auth";
 import { materialService, vendorService } from "../../services/api";
 
+interface Material {
+  id: string;
+  name: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  status: string;
+  vendors: Vendor[];
+}
+
+interface Vendor {
+  id: string;
+  name: string;
+}
+
+interface Toast {
+  message: string;
+  type: "success" | "error";
+  visible: boolean;
+}
+
 const authStore = useAuthStore();
 const route = useRoute();
-const router = useRouter();
 
 const projectId = computed(() => route.params.projectId as string);
 const materials = ref<Material[]>([]);
@@ -14,53 +34,19 @@ const vendors = ref<Vendor[]>([]);
 const loading = ref(true);
 const toast = ref<Toast>({ message: "", type: "success", visible: false });
 
-export interface Material {
-  id: string;
-  name: string;
-  description: string;
-  quantity: number;
-  unit: string;
-  status: string;
-  vendorIds: string[];
-}
-
- interface Vendor {
-  id: string;
-  name: string;
-}
-
- interface ApiError {
-  response?: {
-    status?: number;
-    data?: {
-      message?: string;
-    };
-  };
-}
-
- interface Toast {
-  message: string;
-  type: "success" | "error";
-  visible: boolean;
-}
-
 const canManageMaterials = computed(() =>
   ["contractor", "site_engineer"].includes(authStore.userRole)
 );
 
 const fetchMaterials = async () => {
-  if (!authStore.isAuthenticated) {
-    router.push("/login");
-    return;
-  }
   try {
     loading.value = true;
     const response = await materialService.getMaterials(projectId.value);
-    materials.value = response.data;
-    console.log("Materials fetched:", materials.value);
-  } catch (err: unknown) {
-    const apiError = err as ApiError;
-    showToast(apiError.response?.data?.message || "Failed to load materials", "error");
+    materials.value = response.data || [];
+    console.log("Materials data:", materials.value);
+  } catch (err) {
+    showToast("Failed to load materials", "error");
+    console.error("Fetch materials error:", err);
   } finally {
     loading.value = false;
   }
@@ -70,10 +56,8 @@ const fetchVendors = async () => {
   try {
     const response = await vendorService.getVendors();
     vendors.value = response.data;
-    console.log("Vendors fetched:", vendors.value);
-  } catch (err: unknown) {
-    const apiError = err as ApiError;
-    showToast(apiError.response?.data?.message || "Failed to load vendors", "error");
+  } catch (err) {
+    console.error("Fetch vendors error:", err);
   }
 };
 
@@ -82,21 +66,21 @@ const deleteMaterial = async (id: string) => {
     showToast("You are not authorized to delete materials", "error");
     return;
   }
+
   if (!confirm("Are you sure you want to delete this material?")) return;
+
   try {
     await materialService.deleteMaterial(projectId.value, id);
     await fetchMaterials();
     showToast("Material deleted successfully", "success");
-  } catch (err: unknown) {
-    const apiError = err as ApiError;
-    showToast(apiError.response?.data?.message || "Failed to delete material", "error");
+  } catch (err) {
+    showToast("Failed to delete material", "error");
+    console.error("Delete material error:", err);
   }
 };
 
-const getVendorNames = (vendorIds: string[]) => {
-  return vendorIds
-    .map((id) => vendors.value.find((v) => v.id === id)?.name || "Unknown")
-    .join(", ");
+const getVendorNames = (vendors: Vendor[]) => {
+  return vendors?.map((v) => v.name).join(", ") || "None";
 };
 
 const showToast = (message: string, type: "success" | "error") => {
@@ -106,21 +90,36 @@ const showToast = (message: string, type: "success" | "error") => {
   }, 3000);
 };
 
-onMounted(() => {
-  fetchMaterials();
-  fetchVendors();
+// Watch for route changes
+watch(
+  () => [route.params.projectId, route.query.refresh],
+  async () => {
+    await fetchMaterials();
+  },
+  { immediate: true }
+);
+
+onMounted(async () => {
+  await Promise.all([fetchMaterials(), fetchVendors()]);
 });
 </script>
 
 <template>
   <div class="container mx-auto px-4 py-8">
     <h1 class="text-2xl font-bold mb-6">Project Materials</h1>
-    <div v-if="toast.visible" :class="[
-      'fixed top-4 right-4 p-4 rounded-lg shadow-lg transition-all duration-300',
-      toast.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800',
-    ]">
+
+    <div
+      v-if="toast.visible"
+      :class="[
+        'fixed top-4 right-4 p-4 rounded-lg shadow-lg transition-all duration-300',
+        toast.type === 'success'
+          ? 'bg-green-100 text-green-800'
+          : 'bg-red-100 text-red-800',
+      ]"
+    >
       {{ toast.message }}
     </div>
+
     <div v-if="loading" class="flex justify-center my-8">
       <svg
         class="animate-spin h-8 w-8 text-blue-600"
@@ -143,7 +142,11 @@ onMounted(() => {
         ></path>
       </svg>
     </div>
-    <div v-else-if="materials.length === 0" class="bg-white rounded-lg shadow p-6 text-center">
+
+    <div
+      v-else-if="materials.length === 0"
+      class="bg-white rounded-lg shadow p-6 text-center"
+    >
       <p class="text-gray-500">No materials found.</p>
       <router-link
         v-if="canManageMaterials"
@@ -153,6 +156,7 @@ onMounted(() => {
         Create Material
       </router-link>
     </div>
+
     <div v-else>
       <div v-if="canManageMaterials" class="mb-6 flex justify-end">
         <router-link
@@ -162,25 +166,60 @@ onMounted(() => {
           Create Material
         </router-link>
       </div>
+
       <div class="bg-white rounded-lg shadow overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendors</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Name
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Quantity
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Unit
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Status
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Vendors
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-for="material in materials" :key="material.id">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ material.name }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ material.quantity }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ material.unit }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ material.status }}</td>
-              <td class="px-6 py-4 text-sm text-gray-900">{{ getVendorNames(material.vendorIds) || "None" }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {{ material.name }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {{ material.quantity }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {{ material.unit }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {{ material.status }}
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-900">
+                {{ getVendorNames(material.vendors) }}
+              </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <router-link
                   :to="`/projects/${projectId}/materials/${material.id}`"

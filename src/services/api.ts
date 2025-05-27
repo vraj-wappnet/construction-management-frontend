@@ -203,13 +203,17 @@ export const userService = {
   getUsers() {
     return apiClient.get("/users");
   },
+  deleteUser(id: string) {
+    return apiClient.delete(`/users/${id}`);
+  },
+};
+
+
+export const profileService = {
   getUserProfile() {
     return apiClient.get("/users/me");
   },
   updateProfile(data: any) {
     return apiClient.patch("/users/me", data);
   },
-  deleteUser(id: string) {
-    return apiClient.delete(`/users/${id}`);
-  },
-};
+}

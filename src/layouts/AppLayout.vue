@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useRoute } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
-import SidebarNavigation from '../components/layout/SidebarNavigation.vue';
-import TopNavigation from '../components/layout/TopNavigation.vue';
+import { ref, computed } from "vue";
+import { useRoute } from "vue-router";
+import SidebarNavigation from "../components/layout/SidebarNavigation.vue";
+import TopNavigation from "../components/layout/TopNavigation.vue";
 
 const route = useRoute();
-const authStore = useAuthStore();
 const sidebarOpen = ref(false);
 
 const toggleSidebar = () => {
@@ -15,7 +13,7 @@ const toggleSidebar = () => {
 
 const pageTitle = computed(() => {
   const name = route.name as string;
-  return name ? name.charAt(0).toUpperCase() + name.slice(1) : 'Dashboard';
+  return name ? name.charAt(0).toUpperCase() + name.slice(1) : "Dashboard";
 });
 </script>
 
@@ -25,7 +23,10 @@ const pageTitle = computed(() => {
     <TopNavigation :page-title="pageTitle" @toggle-sidebar="toggleSidebar" />
 
     <!-- Sidebar -->
-    <SidebarNavigation :is-open="sidebarOpen" @close-sidebar="sidebarOpen = false" />
+    <SidebarNavigation
+      :is-open="sidebarOpen"
+      @close-sidebar="sidebarOpen = false"
+    />
 
     <!-- Main content -->
     <div class="flex-1 flex flex-col pt-16 md:ml-72">

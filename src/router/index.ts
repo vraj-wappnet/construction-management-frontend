@@ -24,6 +24,11 @@ import TaskDetails from "../views/tasks/TaskDetails.vue";
 import CreateTask from "../views/tasks/CreateTask.vue";
 import AcceptedProjects from "../views/projects/AcceptedProjects.vue";
 import Vendors from "../views/vendors/Vendors.vue";
+import Users from "../views/users/Users.vue";
+import Profile from "../views/users/Profile.vue";
+import CreateMaterial from "../views/materials/CreateMaterial.vue";
+import MaterialDetail from "../views/materials/MaterialDetail.vue";
+import Materials from "../views/materials/Materials.vue";
 
 // Define routes
 const routes: RouteRecordRaw[] = [
@@ -116,11 +121,45 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
 
-    {
+  {
     path: "/vendors",
     name: "Vendors",
     component: Vendors,
     meta: { requiresAuth: true },
+  },
+
+  {
+    path: "/users",
+    name: "Users",
+    component: Users,
+    meta: { requiresAuth: true },
+  },
+
+  {
+    path: "/profile",
+    name: "Profile",
+    component: Profile,
+    meta: { requiresAuth: true },
+  },
+
+  //material
+  {
+    path: "/projects/:projectId/materials",
+    name: ":Materials",
+    component: Materials,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/projects/:projectId/materials/:id",
+    name: "MaterialDetail",
+    component: MaterialDetail,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/projects/:projectId/materials/create",
+    name: ":CreateMaterial",
+    component: CreateMaterial,
+    meta: { requiresAuth: true, roles: ["contractor", "site_engineer"] },
   },
 ];
 

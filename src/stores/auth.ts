@@ -159,19 +159,6 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
-    async fetchUserProfile() {
-      if (!this.token) return;
-
-      try {
-        const response = await apiClient.get("/users/me");
-        this.setUser(response.data);
-      } catch (error: any) {
-        if (error.response?.status === 401) {
-          this.clearAuthState();
-        }
-      }
-    },
-
     setToken(token: string) {
       this.token = token;
       localStorage.setItem("token", token);
@@ -205,10 +192,6 @@ export const useAuthStore = defineStore("auth", {
 
         this.token = token;
         apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
-        if (!this.user) {
-          await this.fetchUserProfile();
-        }
 
         this.loading = false;
         return true;

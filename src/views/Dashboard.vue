@@ -32,22 +32,6 @@ const canCreateProject = computed(() =>
   ["Admin", "Client"].includes(userRole.value)
 );
 
-// const getProjectStatusClass = (status: string) => {
-//   switch (status) {
-//     case "Planning":
-//       return "bg-blue-100 text-blue-800";
-//     case "In Progress":
-//       return "bg-yellow-100 text-yellow-800";
-//     case "Completed":
-//       return "bg-green-100 text-green-800";
-//     case "On Hold":
-//       return "bg-red-100 text-red-800";
-//     default:
-//       return "bg-gray-100 text-gray-800";
-//   }
-// };
-
-// Utility function for stat card gradients
 function getStatGradient(color: string): string {
   const gradients: Record<string, string> = {
     blue: "from-blue-500 to-blue-600",
@@ -112,19 +96,6 @@ const dashboardStats = ref([
   <div
     class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden"
   >
-    <!-- Animated Background Elements -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-      <div
-        class="absolute top-20 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"
-      ></div>
-      <div
-        class="absolute top-40 right-20 w-96 h-96 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000"
-      ></div>
-      <div
-        class="absolute -bottom-32 left-1/3 w-80 h-80 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000"
-      ></div>
-    </div>
-
     <div class="relative z-10 py-8 px-4 sm:px-6 lg:px-8">
       <div class="max-w-7xl mx-auto">
         <!-- Enhanced Header Section -->

@@ -44,13 +44,14 @@ onUnmounted(() => {
 });
 </script>
 
+
 <template>
   <nav
     class="fixed w-full top-0 z-50 font-sans transition-all duration-500"
     :class="
       isScrolled
-        ? 'bg-bule-800 backdrop-blur-md shadow-xl'
-        : 'bg-blue-800 backdrop-blur-sm shadow-md'
+        ? 'bg-gradient-to-br from-slate-900/95 to-blue-900/95 backdrop-blur-xl shadow-xl border-b border-white/10'
+        : 'bg-gradient-to-br from-slate-900/95 to-blue-900/95 backdrop-blur-sm shadow-md border-b border-white/10'
     "
   >
     <div class="mx-auto px-4 sm:px-6 lg:px-8">
@@ -68,10 +69,10 @@ onUnmounted(() => {
               class="relative group transition-all duration-500 transform hover:scale-105"
             >
               <div
-                class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-400 rounded-xl flex items-center justify-center group-hover:from-yellow-400 group-hover:to-yellow-300 transition-all duration-500 shadow-md"
+                class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300"
               >
                 <svg
-                  class="w-6 h-6 text-white group-hover:text-gray-900 transition-colors duration-300"
+                  class="w-6 h-6 text-white group-hover:text-white transition-colors duration-300"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
@@ -81,16 +82,16 @@ onUnmounted(() => {
                 </svg>
               </div>
               <div
-                class="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse group-hover:bg-yellow-300 transition-all duration-300"
+                class="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse group-hover:bg-green-300 transition-all duration-300"
               ></div>
               <div
-                class="absolute -bottom-1 -left-1 w-2 h-2 bg-indigo-300 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                class="absolute -bottom-1 -left-1 w-2 h-2 bg-blue-300 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
               ></div>
             </div>
             <span
-              class="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-100 group-hover:from-yellow-300 group-hover:to-yellow-200 transition-all duration-500"
+              class="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-200 group-hover:from-blue-300 group-hover:to-purple-300 transition-all duration-500"
             >
-              Construction<span class="text-yellow-400">Sync</span>
+              Construction<span class="text-blue-400">Sync</span>
             </span>
           </router-link>
         </div>
@@ -101,29 +102,29 @@ onUnmounted(() => {
             <template v-if="!authStore.isAuthenticated">
               <router-link
                 to="/"
-                class="relative px-4 py-2 rounded-lg text-white hover:text-yellow-300 hover:bg-indigo-500/20 transition-all duration-300 font-medium text-sm group"
-                active-class="text-yellow-300"
+                class="relative px-4 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/20 transition-all duration-300 font-medium text-sm group"
+                active-class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-400/30 shadow-lg shadow-blue-500/10"
                 @click="closeMobileMenu"
               >
                 <span class="relative z-10">Home</span>
                 <span
-                  class="absolute inset-0 bg-yellow-400/10 rounded-lg scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300"
+                  class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"
                 ></span>
               </router-link>
               <router-link
                 to="/login"
-                class="relative px-4 py-2 rounded-lg text-white hover:text-yellow-300 hover:bg-indigo-500/20 transition-all duration-300 font-medium text-sm group"
-                active-class="text-yellow-300"
+                class="relative px-4 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/20 transition-all duration-300 font-medium text-sm group"
+                active-class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-400/30 shadow-lg shadow-blue-500/10"
                 @click="closeMobileMenu"
               >
                 <span class="relative z-10">Login</span>
                 <span
-                  class="absolute inset-0 bg-yellow-400/10 rounded-lg scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300"
+                  class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"
                 ></span>
               </router-link>
               <router-link
                 to="/register"
-                class="relative group px-5 py-2.5 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 rounded-lg font-semibold hover:from-yellow-300 hover:to-yellow-400 transition-all duration-500 transform hover:scale-[1.03] shadow-md hover:shadow-lg"
+                class="relative group px-5 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-400 hover:to-purple-500 transition-all duration-500 transform hover:scale-[1.03] shadow-md hover:shadow-lg"
                 @click="closeMobileMenu"
               >
                 <span class="flex items-center space-x-2 relative z-10">
@@ -143,7 +144,7 @@ onUnmounted(() => {
                   </svg>
                 </span>
                 <span
-                  class="absolute inset-0 bg-white/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  class="absolute inset-0 bg-white/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                 ></span>
               </router-link>
             </template>
@@ -151,12 +152,12 @@ onUnmounted(() => {
             <template v-if="authStore.isAuthenticated">
               <router-link
                 to="/projects"
-                class="relative flex items-center px-4 py-2 rounded-lg text-white hover:text-yellow-300 hover:bg-indigo-500/20 transition-all duration-300 font-medium text-sm group"
-                active-class="text-yellow-300"
+                class="relative flex items-center px-4 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/20 transition-all duration-300 font-medium text-sm group"
+                active-class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-400/30 shadow-lg shadow-blue-500/10"
                 @click="closeMobileMenu"
               >
                 <svg
-                  class="w-4 h-4 mr-2"
+                  class="w-4 h-4 mr-2 text-gray-400 group-hover:text-white group-hover:scale-110 transition-all duration-300"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -170,17 +171,17 @@ onUnmounted(() => {
                 </svg>
                 <span class="relative z-10">Projects</span>
                 <span
-                  class="absolute inset-0 bg-yellow-400/10 rounded-lg scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300"
+                  class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"
                 ></span>
               </router-link>
-               <router-link
+              <router-link
                 to="/profile"
-                class="relative flex items-center px-4 py-2 rounded-lg text-white hover:text-yellow-300 hover:bg-indigo-500/20 transition-all duration-300 font-medium text-sm group"
-                active-class="text-yellow-300"
+                class="relative flex items-center px-4 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/20 transition-all duration-300 font-medium text-sm group"
+                active-class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-400/30 shadow-lg shadow-blue-500/10"
                 @click="closeMobileMenu"
               >
                 <svg
-                  class="w-4 h-4 mr-2"
+                  class="w-4 h-4 mr-2 text-gray-400 group-hover:text-white group-hover:scale-110 transition-all duration-300"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -200,18 +201,18 @@ onUnmounted(() => {
                 </svg>
                 <span class="relative z-10">Profile</span>
                 <span
-                  class="absolute inset-0 bg-yellow-400/10 rounded-lg scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300"
+                  class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"
                 ></span>
               </router-link>
               <router-link
                 v-if="['Admin', 'Client'].includes(authStore.userRole)"
                 to="/projects/create"
-                class="relative flex items-center px-4 py-2 rounded-lg text-white hover:text-yellow-300 hover:bg-indigo-500/20 transition-all duration-300 font-medium text-sm group"
-                active-class="text-yellow-300"
+                class="relative flex items-center px-4 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/20 transition-all duration-300 font-medium text-sm group"
+                active-class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-400/30 shadow-lg shadow-blue-500/10"
                 @click="closeMobileMenu"
               >
                 <svg
-                  class="w-4 h-4 mr-2"
+                  class="w-4 h-4 mr-2 text-gray-400 group-hover:text-white group-hover:scale-110 transition-all duration-300"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -225,15 +226,15 @@ onUnmounted(() => {
                 </svg>
                 <span class="relative z-10">New Project</span>
                 <span
-                  class="absolute inset-0 bg-yellow-400/10 rounded-lg scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300"
+                  class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"
                 ></span>
               </router-link>
               <button
                 @click="logout"
-                class="relative group flex items-center px-4 py-2 rounded-lg text-white hover:text-red-300 hover:bg-red-500/20 transition-all duration-300 font-medium text-sm"
+                class="relative group flex items-center px-4 py-2 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-400/20 transition-all duration-300 font-medium text-sm"
               >
                 <svg
-                  class="w-4 h-4 mr-2 transform group-hover:rotate-12 transition-transform"
+                  class="w-4 h-4 mr-2 transform group-hover:rotate-12 transition-transform text-gray-400 group-hover:text-red-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -247,7 +248,7 @@ onUnmounted(() => {
                 </svg>
                 <span class="relative z-10">Logout</span>
                 <span
-                  class="absolute inset-0 bg-red-400/10 rounded-lg scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300"
+                  class="absolute inset-0 bg-gradient-to-r from-transparent via-red-500/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"
                 ></span>
               </button>
             </template>
@@ -259,7 +260,7 @@ onUnmounted(() => {
           <!-- Sidebar Toggle Button -->
           <button
             @click="emit('toggleSidebar')"
-            class="p-2 text-white hover:bg-indigo-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all duration-300 mr-2"
+            class="p-2 text-white hover:bg-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300 mr-2 backdrop-blur-sm"
             aria-label="Toggle sidebar"
           >
             <svg
@@ -279,7 +280,7 @@ onUnmounted(() => {
 
           <button
             @click="toggleMobileMenu"
-            class="p-2 text-white hover:bg-indigo-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all duration-300"
+            class="p-2 text-white hover:bg-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300 backdrop-blur-sm"
             aria-label="Toggle menu"
           >
             <div class="w-6 h-6 relative transform transition-all duration-300">
@@ -324,18 +325,18 @@ onUnmounted(() => {
     >
       <div
         v-if="isMobileMenuOpen"
-        class="md:hidden bg-indigo-600/95 backdrop-blur-md border-t border-indigo-500/30 shadow-xl"
+        class="md:hidden bg-gradient-to-br from-slate-900/95 to-blue-900/95 backdrop-blur-xl border-t border-white/10 shadow-xl"
       >
         <div class="pt-2 pb-4 px-4 space-y-1">
           <template v-if="!authStore.isAuthenticated">
             <router-link
               to="/"
-              class="group flex items-center px-3 py-3 rounded-lg text-white hover:text-yellow-300 hover:bg-indigo-500/30 transition-all duration-300 font-medium"
-              active-class="text-yellow-300 bg-indigo-500/20"
+              class="group flex items-center px-3 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/20 transition-all duration-300 font-medium"
+              active-class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-400/30"
               @click="closeMobileMenu"
             >
               <svg
-                class="w-5 h-5 mr-3 text-yellow-300 opacity-70 group-hover:opacity-100 transition-opacity"
+                class="w-5 h-5 mr-3 text-gray-400 group-hover:text-white group-hover:scale-110 transition-all duration-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -351,12 +352,12 @@ onUnmounted(() => {
             </router-link>
             <router-link
               to="/login"
-              class="group flex items-center px-3 py-3 rounded-lg text-white hover:text-yellow-300 hover:bg-indigo-500/30 transition-all duration-300 font-medium"
-              active-class="text-yellow-300 bg-indigo-500/20"
+              class="group flex items-center px-3 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/20 transition-all duration-300 font-medium"
+              active-class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-400/30"
               @click="closeMobileMenu"
             >
               <svg
-                class="w-5 h-5 mr-3 text-yellow-300 opacity-70 group-hover:opacity-100 transition-opacity"
+                class="w-5 h-5 mr-3 text-gray-400 group-hover:text-white group-hover:scale-110 transition-all duration-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -372,7 +373,7 @@ onUnmounted(() => {
             </router-link>
             <router-link
               to="/register"
-              class="group flex items-center px-3 py-3 rounded-lg bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 hover:from-yellow-300 hover:to-yellow-400 transition-all duration-500 font-semibold"
+              class="group flex items-center px-3 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-400 hover:to-purple-500 transition-all duration-500 font-semibold shadow-md hover:shadow-lg"
               @click="closeMobileMenu"
             >
               <svg
@@ -395,12 +396,12 @@ onUnmounted(() => {
           <template v-if="authStore.isAuthenticated">
             <router-link
               to="/dashboard"
-              class="group flex items-center px-3 py-3 rounded-lg text-white hover:text-yellow-300 hover:bg-indigo-500/30 transition-all duration-300 font-medium"
-              active-class="text-yellow-300 bg-indigo-500/20"
+              class="group flex items-center px-3 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/20 transition-all duration-300 font-medium"
+              active-class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-400/30"
               @click="closeMobileMenu"
             >
               <svg
-                class="w-5 h-5 mr-3 text-yellow-300 opacity-70 group-hover:opacity-100 transition-opacity"
+                class="w-5 h-5 mr-3 text-gray-400 group-hover:text-white group-hover:scale-110 transition-all duration-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -422,12 +423,12 @@ onUnmounted(() => {
             </router-link>
             <router-link
               to="/projects"
-              class="group flex items-center px-3 py-3 rounded-lg text-white hover:text-yellow-300 hover:bg-indigo-500/30 transition-all duration-300 font-medium"
-              active-class="text-yellow-300 bg-indigo-500/20"
+              class="group flex items-center px-3 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/20 transition-all duration-300 font-medium"
+              active-class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-400/30"
               @click="closeMobileMenu"
             >
               <svg
-                class="w-5 h-5 mr-3 text-yellow-300 opacity-70 group-hover:opacity-100 transition-opacity"
+                class="w-5 h-5 mr-3 text-gray-400 group-hover:text-white group-hover:scale-110 transition-all duration-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -444,12 +445,12 @@ onUnmounted(() => {
             <router-link
               v-if="['Admin', 'Client'].includes(authStore.userRole)"
               to="/projects/create"
-              class="group flex items-center px-3 py-3 rounded-lg text-white hover:text-yellow-300 hover:bg-indigo-500/30 transition-all duration-300 font-medium"
-              active-class="text-yellow-300 bg-indigo-500/20"
+              class="group flex items-center px-3 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/20 transition-all duration-300 font-medium"
+              active-class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-400/30"
               @click="closeMobileMenu"
             >
               <svg
-                class="w-5 h-5 mr-3 text-yellow-300 opacity-70 group-hover:opacity-100 transition-opacity"
+                class="w-5 h-5 mr-3 text-gray-400 group-hover:text-white group-hover:scale-110 transition-all duration-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -465,10 +466,10 @@ onUnmounted(() => {
             </router-link>
             <button
               @click="logout"
-              class="group w-full flex items-center px-3 py-3 rounded-lg text-white hover:text-red-300 hover:bg-red-500/20 transition-all duration-300 font-medium"
+              class="group w-full flex items-center px-3 py-3 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-400/20 transition-all duration-300 font-medium"
             >
               <svg
-                class="w-5 h-5 mr-3 text-red-300 opacity-70 group-hover:opacity-100 transition-opacity transform group-hover:rotate-12"
+                class="w-5 h-5 mr-3 text-gray-400 group-hover:text-red-400 group-hover:scale-110 transition-all duration-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -490,54 +491,58 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* Enhanced active link indicator */
-.router-link-active {
-  position: relative;
+/* Custom scrollbar styling */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-.router-link-active:not(.router-link-exact-active)::after {
-  content: "";
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 5px;
-  height: 5px;
-  background: #fde047; /* Yellow-300 */
-  border-radius: 50%;
-  animation: pulse 1.5s infinite;
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Custom animations */
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .router-link-exact-active {
-  background-color: rgba(253, 224, 71, 0.1);
+  animation: slideInFromLeft 0.3s ease-out;
 }
 
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: translateX(-50%) scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: translateX(-50%) scale(1.3);
-  }
+/* Glassmorphism effect enhancement */
+.backdrop-blur-xl {
+  backdrop-filter: blur(20px);
 }
 
-/* Smooth transitions for mobile menu */
-.mobile-menu-enter-active,
-.mobile-menu-leave-active {
-  transition: all 0.3s ease;
+/* Smooth transitions for all interactive elements */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.mobile-menu-enter-from,
-.mobile-menu-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
+/* Enhanced focus states */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
 }
 
-/* Glow effect for logo */
-.logo-glow {
-  filter: drop-shadow(0 0 8px rgba(253, 224, 71, 0.4));
+/* Micro-interactions */
+.group:hover .group-hover\:scale-110 {
+  transform: scale(1.1);
+}
+
+.hover\:scale-105:hover {
+  transform: scale(1.05);
 }
 </style>
+
+

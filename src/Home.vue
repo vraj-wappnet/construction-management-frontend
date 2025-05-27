@@ -62,12 +62,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 font-sans overflow-x-hidden">
+  <div class="min-h-screen bg-gray-900 font-sans overflow-x-hidden">
     <Navbar />
 
     <!-- Hero Section -->
     <section
-      class="relative bg-gradient-to-br from-blue-900 via-blue-600 to-blue-400 text-white py-28 overflow-hidden"
+      class="relative bg-gradient-to-br from-slate-900/95 to-blue-900/95 text-white py-28 overflow-hidden backdrop-blur-sm"
     >
       <!-- Subtle Background Pattern -->
       <div class="absolute inset-0 bg-grid-pattern opacity-10"></div>
@@ -76,7 +76,7 @@ onMounted(() => {
       <div class="absolute inset-0 pointer-events-none">
         <div class="absolute top-1/4 left-1/5 animate-float">
           <svg
-            class="w-10 h-10 text-yellow-400 opacity-30"
+            class="w-10 h-10 text-blue-400 opacity-30"
             fill="currentColor"
             viewBox="0 0 24 24"
           >
@@ -87,7 +87,7 @@ onMounted(() => {
         </div>
         <div class="absolute top-1/3 right-1/5 animate-float-delayed">
           <svg
-            class="w-8 h-8 text-yellow-400 opacity-30"
+            class="w-8 h-8 text-purple-400 opacity-30"
             fill="currentColor"
             viewBox="0 0 24 24"
           >
@@ -109,10 +109,10 @@ onMounted(() => {
             class="text-5xl md:text-7xl font-extrabold mb-6 leading-tight tracking-tight"
           >
             Build Smarter with
-            <span class="block text-yellow-400">ConstructionSync</span>
+            <span class="block bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">ConstructionSync</span>
           </h1>
           <p
-            class="text-lg md:text-xl mb-10 max-w-3xl mx-auto leading-relaxed opacity-90 font-medium"
+            class="text-lg md:text-xl mb-10 max-w-3xl mx-auto leading-relaxed opacity-90 font-medium text-gray-300"
           >
             Streamline your construction projects with our all-in-one management
             platform designed for efficiency and precision.
@@ -120,9 +120,9 @@ onMounted(() => {
           <div class="flex flex-col sm:flex-row justify-center gap-6">
             <button
               @click="goToLogin"
-              class="group bg-white text-blue-900 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+              class="group bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-400 hover:to-purple-500 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl relative"
             >
-              <span class="flex items-center justify-center gap-2">
+              <span class="flex items-center justify-center gap-2 relative z-10">
                 Sign In
                 <svg
                   class="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
@@ -138,10 +138,13 @@ onMounted(() => {
                   />
                 </svg>
               </span>
+              <span
+                class="absolute inset-0 bg-white/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              ></span>
             </button>
             <button
               @click="goToRegister"
-              class="group bg-yellow-400 text-blue-900 px-8 py-4 rounded-xl font-semibold hover:bg-yellow-300 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+              class="group bg-white text-blue-900 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
             >
               <span class="flex items-center justify-center gap-2">
                 Start Building
@@ -173,14 +176,14 @@ onMounted(() => {
         >
           <path
             d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
-            class="fill-gray-50"
+            class="fill-gray-900"
           ></path>
         </svg>
       </div>
     </section>
 
     <!-- Stats Section -->
-    <section id="stats-section" class="py-16 bg-white">
+    <section id="stats-section" class="py-16 bg-gray-900">
       <div class="container mx-auto px-6">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div
@@ -189,10 +192,10 @@ onMounted(() => {
             class="text-center transform transition-all duration-500 hover:scale-105"
             :style="{ transitionDelay: `${index * 150}ms` }"
           >
-            <div class="text-4xl md:text-5xl font-extrabold text-blue-600 mb-3">
+            <div class="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 mb-3">
               {{ stat.number }}{{ stat.suffix }}
             </div>
-            <div class="text-gray-700 font-medium text-lg">
+            <div class="text-gray-300 font-medium text-lg">
               {{ stat.label }}
             </div>
           </div>
@@ -201,13 +204,13 @@ onMounted(() => {
     </section>
 
     <!-- Features Section -->
-    <section class="py-20 bg-gradient-to-b from-white to-gray-50">
+    <section class="py-20 bg-gradient-to-b from-gray-900 to-slate-800">
       <div class="container mx-auto px-6">
         <div class="text-center mb-16">
-          <h2 class="text-4xl md:text-5xl font-extrabold text-gray-800 mb-4">
+          <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4">
             Comprehensive Construction Management
           </h2>
-          <p class="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p class="text-lg text-gray-300 max-w-3xl mx-auto leading-relaxed">
             Manage every stage of your construction projects with our powerful,
             user-friendly tools.
           </p>
@@ -255,15 +258,15 @@ onMounted(() => {
               },
             ]"
             :key="index"
-            class="group bg-white p-8 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
+            class="group bg-slate-800/50 p-8 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 backdrop-blur-sm border border-white/10"
           >
             <div
               class="w-14 h-14 rounded-xl flex items-center justify-center mb-6"
-              :class="`bg-${feature.color}-100 group-hover:bg-${feature.color}-200 transition-colors`"
+              :class="`bg-${feature.color}-100/20 group-hover:bg-${feature.color}-200/30 transition-colors`"
             >
               <svg
                 class="w-7 h-7"
-                :class="`text-${feature.color}-600`"
+                :class="`text-${feature.color}-400`"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -276,10 +279,10 @@ onMounted(() => {
                 />
               </svg>
             </div>
-            <h3 class="text-xl font-bold text-gray-800 mb-3">
+            <h3 class="text-xl font-bold text-white mb-3">
               {{ feature.title }}
             </h3>
-            <p class="text-gray-600 leading-relaxed text-sm">
+            <p class="text-gray-300 leading-relaxed text-sm">
               {{ feature.desc }}
             </p>
           </div>
@@ -289,7 +292,7 @@ onMounted(() => {
 
     <!-- CTA Section -->
     <section
-      class="relative bg-gradient-to-r from-blue-800 to-blue-500 py-20 overflow-hidden"
+      class="relative bg-gradient-to-r from-slate-900 to-blue-900 py-20 overflow-hidden backdrop-blur-sm"
     >
       <div class="absolute inset-0 bg-grid-pattern opacity-10"></div>
       <div class="container mx-auto px-6 text-center relative z-10">
@@ -297,16 +300,16 @@ onMounted(() => {
           <h2 class="text-4xl md:text-5xl font-extrabold mb-6">
             Ready to Transform Your Projects?
           </h2>
-          <p class="text-lg md:text-xl mb-10 opacity-90">
+          <p class="text-lg md:text-xl mb-10 opacity-90 text-gray-300">
             Join the construction revolution with ConstructionSync and deliver
             projects faster and smarter.
           </p>
           <div class="flex flex-col sm:flex-row justify-center gap-6">
             <button
               @click="goToRegister"
-              class="group bg-yellow-400 text-blue-900 px-10 py-4 rounded-xl font-bold hover:bg-yellow-300 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+              class="group bg-gradient-to-r from-blue-500 to-purple-600 text-white px-10 py-4 rounded-xl font-bold hover:from-blue-400 hover:to-purple-500 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl relative"
             >
-              <span class="flex items-center justify-center gap-2">
+              <span class="flex items-center justify-center gap-2 relative z-10">
                 Start Your Free Trial
                 <svg
                   class="w-6 h-6 transform group-hover:translate-x-1 transition-transform"
@@ -322,11 +325,14 @@ onMounted(() => {
                   />
                 </svg>
               </span>
+              <span
+                class="absolute inset-0 bg-white/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              ></span>
             </button>
             <button
-              class="group bg-transparent border-2 border-white text-white px-10 py-4 rounded-xl font-bold hover:bg-white hover:text-blue-900 transition-all duration-300 transform hover:scale-105"
+              class="group bg-transparent border-2 border-white text-white px-10 py-4 rounded-xl font-bold hover:bg-white/10 hover:border-white/20 transition-all duration-300 transform hover:scale-105 relative"
             >
-              <span class="flex items-center justify-center gap-2">
+              <span class="flex items-center justify-center gap-2 relative z-10">
                 Watch Demo
                 <svg
                   class="w-6 h-6 transform group-hover:scale-110 transition-transform"
@@ -342,9 +348,12 @@ onMounted(() => {
                   />
                 </svg>
               </span>
+              <span
+                class="absolute inset-0 bg-white/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              ></span>
             </button>
           </div>
-          <div class="mt-8 text-sm opacity-80">
+          <div class="mt-8 text-sm opacity-80 text-gray-300">
             No credit card required • 30-day free trial • Cancel anytime
           </div>
         </div>
@@ -352,67 +361,67 @@ onMounted(() => {
     </section>
 
     <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-12">
+    <footer class="bg-slate-900 text-white py-12">
       <div class="container mx-auto px-6">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
-            <h3 class="text-xl font-bold mb-4">ConstructionSync</h3>
-            <p class="text-gray-400 leading-relaxed text-sm">
+            <h3 class="text-xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">ConstructionSync</h3>
+            <p class="text-gray-300 leading-relaxed text-sm">
               Empowering construction teams with intelligent project management
               solutions.
             </p>
           </div>
           <div>
-            <h4 class="font-semibold mb-4 text-lg">Product</h4>
-            <ul class="space-y-2 text-gray-400 text-sm">
+            <h4 class="font-semibold mb-4 text-lg text-white">Product</h4>
+            <ul class="space-y-2 text-gray-300 text-sm">
               <li>
-                <a href="#" class="hover:text-yellow-400 transition"
+                <a href="#" class="hover:text-blue-400 transition"
                   >Features</a
                 >
               </li>
               <li>
-                <a href="#" class="hover:text-yellow-400 transition">Pricing</a>
+                <a href="#" class="hover:text-blue-400 transition">Pricing</a>
               </li>
               <li>
-                <a href="#" class="hover:text-yellow-400 transition">Demo</a>
+                <a href="#" class="hover:text-blue-400 transition">Demo</a>
               </li>
             </ul>
           </div>
           <div>
-            <h4 class="font-semibold mb-4 text-lg">Support</h4>
-            <ul class="space-y-2 text-gray-400 text-sm">
+            <h4 class="font-semibold mb-4 text-lg text-white">Support</h4>
+            <ul class="space-y-2 text-gray-300 text-sm">
               <li>
-                <a href="#" class="hover:text-yellow-400 transition"
+                <a href="#" class="hover:text-blue-400 transition"
                   >Help Center</a
                 >
               </li>
               <li>
-                <a href="#" class="hover:text-yellow-400 transition">Contact</a>
+                <a href="#" class="hover:text-blue-400 transition">Contact</a>
               </li>
               <li>
-                <a href="#" class="hover:text-yellow-400 transition"
+                <a href="#" class="hover:text-blue-400 transition"
                   >Training</a
                 >
               </li>
             </ul>
           </div>
           <div>
-            <h4 class="font-semibold mb-4 text-lg">Company</h4>
-            <ul class="space-y-2 text-gray-400 text-sm">
+            <h4 class="font-semibold mb-4 text-lg text-white">Company</h4>
+            <ul class="space-y-2 text-gray-300 text-sm">
               <li>
-                <a href="#" class="hover:text-yellow-400 transition">About</a>
+                <a href="#" class="hover:text-blue-400 transition">About</a>
               </li>
               <li>
-                <a href="#" class="hover:text-yellow-400 transition">Careers</a>
+                <a href="#" class="hover:text-blue-400 transition">Careers</a>
               </li>
               <li>
-                <a href="#" class="hover:text-yellow-400 transition">Privacy</a>
+                <a href="#" class="hover:text-blue-400 transition">Privacy</a>
               </li>
             </ul>
           </div>
         </div>
         <div
-          class="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm"
+          class="border-t border-white/10 pt-8 text-center text-gray-300 text-sm"
         >
           <p>© 2025 ConstructionSync. All rights reserved.</p>
         </div>
@@ -428,22 +437,23 @@ onMounted(() => {
 }
 
 :root {
+  --slate-900: #0f172a;
   --blue-900: #1e3a8a;
-  --blue-600: #3b82f6;
+  --blue-500: #3b82f6;
+  --purple-600: #7c3aed;
   --blue-400: #60a5fa;
-  --yellow-400: #facc15;
-  --yellow-300: #fbbf24;
-  --gray-50: #f3f4f6;
+  --purple-400: #a78bfa;
   --gray-900: #1f2937;
+  --gray-300: #d1d5db;
 }
 
 .bg-grid-pattern {
   background-image: linear-gradient(
       to right,
-      rgba(255, 255, 255, 0.1) 1px,
+      rgba(255, 255, 255, 0.05) 1px,
       transparent 1px
     ),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
@@ -483,15 +493,28 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--gray-50);
+  background: var(--gray-900);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--blue-600);
+  background: var(--blue-500);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--blue-400);
+  background: var(--purple-600);
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced focus states */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--blue-400);
+  outline-offset: 2px;
 }
 </style>

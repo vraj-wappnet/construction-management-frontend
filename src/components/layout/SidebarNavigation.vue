@@ -1,10 +1,9 @@
-```vue
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "../../stores/auth";
 
-defineProps<{
+const props = defineProps<{
   isOpen?: boolean; // Optional prop for external control
 }>();
 
@@ -18,20 +17,40 @@ const route = useRoute();
 const authStore = useAuthStore();
 
 // Reactive state for sidebar visibility
-const isSidebarOpen = ref<boolean>(true); // Default to open on desktop
-const isMobile = ref<boolean>(window.innerWidth < 768); // Detect mobile on mount
+const isSidebarOpen = ref<boolean>(false);
+const isMobile = ref<boolean>(window.innerWidth < 768);
+
+// Sync with parent prop if provided
+watch(() => props.isOpen, (newVal) => {
+  if (newVal !== undefined) {
+    isSidebarOpen.value = newVal;
+  }
+});
 
 // Update isMobile on window resize
 const handleResize = () => {
+  const wasMobile = isMobile.value;
   isMobile.value = window.innerWidth < 768;
-  if (!isMobile.value) {
-    isSidebarOpen.value = true; // Auto-open on desktop
-  } else {
-    isSidebarOpen.value = false; // Auto-close on mobile
+  
+  // Only auto-toggle if the mobile state changed
+  if (wasMobile !== isMobile.value) {
+    if (isMobile.value) {
+      // Just switched to mobile - close sidebar
+      isSidebarOpen.value = false;
+      emit("closeSidebar");
+    } else {
+      // Just switched to desktop - open sidebar
+      isSidebarOpen.value = true;
+      emit("openSidebar");
+    }
   }
 };
 
 onMounted(() => {
+  // Initialize based on screen size
+  isMobile.value = window.innerWidth < 768;
+  isSidebarOpen.value = !isMobile.value;
+  
   window.addEventListener("resize", handleResize);
 });
 
@@ -93,218 +112,266 @@ const logout = () => {
 </script>
 
 <template>
-  <div
-    v-if="isMobile && isSidebarOpen"
-    class="fixed inset-x-0 top-16 bottom-0 z-40 transition-transform duration-300"
-    :class="{ 'translate-x-0': isSidebarOpen, '-translate-x-full': !isSidebarOpen }"
-    role="dialog"
-    aria-modal="true"
-  >
+  <div>
+    <!-- Mobile Sidebar -->
     <div
-      class="fixed inset-0 bg-gray-900 bg-opacity-75"
-      @click="toggleSidebar"
-    ></div>
+      v-if="isMobile"
+      class="fixed inset-x-0 top-16 bottom-0 z-50 transition-all duration-300 ease-out"
+      :class="{'translate-x-0': isSidebarOpen, '-translate-x-full': !isSidebarOpen}"
+      role="dialog"
+      aria-modal="true"
+    >
+      <!-- Enhanced backdrop with blur effect -->
+      <div
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+        @click="toggleSidebar"
+      ></div>
 
-    <div class="relative flex-1 flex flex-col max-w-xs w-full bg-blue-800">
-      <div class="flex flex-col h-0 flex-1">
-        <!-- Toggle Button for Mobile -->
-        <div class="p-4">
-          <button
-            class="p-2 rounded-lg bg-blue-900 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-colors duration-200 w-10"
-            @click="toggleSidebar"
-            :aria-label="isSidebarOpen ? 'Close sidebar' : 'Open sidebar'"
-          >
-            <svg
-              class="h-6 w-6"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                :d="isSidebarOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'"
-              />
-            </svg>
-          </button>
-        </div>
-        <div class="flex-1 overflow-y-auto">
-          <nav class="px-2 py-4 space-y-1">
-            <router-link
-              v-for="item in navigationItems"
-              :key="item.name"
-              :to="item.path"
-              class="group flex items-center px-3 py-2 text-base font-medium rounded-lg transition-all duration-200"
-              :class="[
-                route.path === item.path || route.path.startsWith(item.path + '/')
-                  ? 'bg-blue-900 text-yellow-400'
-                  : 'text-white hover:bg-blue-700 hover:text-yellow-400',
-              ]"
-              @click="toggleSidebar"
-            >
-              <svg
-                class="mr-4 h-6 w-6 flex-shrink-0"
+      <!-- Mobile sidebar content with glassmorphism -->
+      <div class="relative flex-1 flex flex-col max-w-sm w-full bg-gradient-to-br from-slate-900/95 to-blue-900/95 backdrop-blur-xl border-r border-white/10 shadow-2xl">
+        <div class="flex flex-col h-0 flex-1">
+          <!-- Enhanced mobile header -->
+          <div class="p-6 border-b border-white/10">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                  </svg>
+                </div>
+                <span class="text-white font-semibold text-lg">Menu</span>
+              </div>
+              <button
+                class="p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200 backdrop-blur-sm"
+                @click="toggleSidebar"
+                :aria-label="isSidebarOpen ? 'Close sidebar' : 'Open sidebar'"
+              >
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Enhanced navigation -->
+          <div class="flex-1 overflow-y-auto scrollbar-hide px-4 py-6">
+            <nav class="space-y-2">
+              <router-link
+                v-for="(item, index) in navigationItems"
+                :key="item.name"
+                :to="item.path"
+                class="group flex items-center px-4 py-3 text-base font-medium rounded-xl transition-all duration-300 relative overflow-hidden"
                 :class="[
                   route.path === item.path || route.path.startsWith(item.path + '/')
-                    ? 'text-yellow-400'
-                    : 'text-blue-300 group-hover:text-yellow-400',
+                    ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border border-blue-400/30 shadow-lg shadow-blue-500/10'
+                    : 'text-gray-300 hover:bg-white/10 hover:text-white border border-transparent hover:border-white/20',
                 ]"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  :d="item.icon"
-                />
-              </svg>
-              {{ item.name }}
-            </router-link>
-          </nav>
-        </div>
-      </div>
-
-      <div class="flex-shrink-0 flex border-t border-blue-900 p-4">
-        <div class="flex items-center w-full">
-          <div
-            class="bg-blue-900 rounded-full h-10 w-10 flex items-center justify-center text-yellow-400 font-semibold text-lg"
-          >
-            {{ authStore.user?.firstName?.charAt(0).toUpperCase() }}
-          </div>
-          <div class="ml-3 flex-1">
-            <p class="text-base font-medium text-white truncate">
-              {{ authStore.user?.firstName }} {{ authStore.user?.lastName }}
-            </p>
-            <div class="flex space-x-4">
-              <router-link
-                to="/profile"
-                class="text-sm font-medium text-blue-200 hover:text-yellow-400 transition-colors duration-200"
+                :style="{ 'animation-delay': `${index * 50}ms` }"
                 @click="toggleSidebar"
               >
-                Profile
+                <!-- Active indicator -->
+                <div
+                  v-if="route.path === item.path || route.path.startsWith(item.path + '/')"
+                  class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-400 to-purple-500 rounded-r-full"
+                ></div>
+                
+                <svg
+                  class="mr-4 h-6 w-6 flex-shrink-0 transition-all duration-300"
+                  :class="[
+                    route.path === item.path || route.path.startsWith(item.path + '/')
+                      ? 'text-blue-300'
+                      : 'text-gray-400 group-hover:text-white group-hover:scale-110',
+                  ]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    :d="item.icon"
+                  />
+                </svg>
+                <span class="transition-all duration-300">{{ item.name }}</span>
+                
+                <!-- Hover effect -->
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
               </router-link>
-              <button
-                @click="logout"
-                class="text-sm font-medium text-blue-200 hover:text-red-400 transition-colors duration-200"
-              >
-                Logout
-              </button>
+            </nav>
+          </div>
+        </div>
+
+        <!-- Enhanced user section -->
+        <div class="flex-shrink-0 border-t border-white/10 p-6 bg-gradient-to-r from-slate-900/50 to-blue-900/50">
+          <div class="flex items-center w-full">
+            <div class="relative">
+              <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-full h-12 w-12 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                {{ authStore.user?.firstName?.charAt(0).toUpperCase() }}
+              </div>
+              <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-slate-900"></div>
+            </div>
+            <div class="ml-4 flex-1">
+              <p class="text-base font-semibold text-white truncate">
+                {{ authStore.user?.firstName }} {{ authStore.user?.lastName }}
+              </p>
+              <div class="flex space-x-4 mt-1">
+                <router-link
+                  to="/profile"
+                  class="text-sm font-medium text-blue-300 hover:text-blue-200 transition-colors duration-200"
+                  @click="toggleSidebar"
+                >
+                  Profile
+                </router-link>
+                <button
+                  @click="logout"
+                  class="text-sm font-medium text-gray-400 hover:text-red-400 transition-colors duration-200"
+                >
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Desktop Sidebar -->
-  <div
-    class="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:pt-16 transition-all duration-300"
-    :class="isSidebarOpen ? 'md:w-72' : 'md:w-16'"
-  >
-    <div class="flex-1 flex flex-col min-h-0 bg-blue-800">
-      <div class="flex flex-col flex-1">
-        <!-- Toggle Button for Desktop -->
-        <div class="p-4">
-          <button
-            class="p-2 rounded-lg bg-blue-900 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-colors duration-200"
-            :class="isSidebarOpen ? 'w-10' : 'w-full'"
-            @click="toggleSidebar"
-            :aria-label="isSidebarOpen ? 'Close sidebar' : 'Open sidebar'"
-          >
-            <svg
-              class="h-6 w-6 mx-auto"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                :d="isSidebarOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'"
-              />
-            </svg>
-          </button>
-        </div>
-        <div class="flex-1 overflow-y-auto">
-          <nav class="flex-1 px-2 py-4 space-y-1">
-            <router-link
-              v-for="item in navigationItems"
-              :key="item.name"
-              :to="item.path"
-              class="group flex items-center px-3 py-2 rounded-lg transition-all duration-200 relative"
-              :class="[
-                route.path === item.path || route.path.startsWith(item.path + '/')
-                  ? 'bg-blue-900 text-yellow-400'
-                  : 'text-white hover:bg-blue-700 hover:text-yellow-400',
-                isSidebarOpen ? 'text-sm font-medium' : 'justify-center',
-              ]"
-            >
-              <svg
-                class="h-6 w-6 flex-shrink-0"
+    <!-- Desktop Sidebar -->
+    <div
+      class="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:pt-16 transition-all duration-500 ease-in-out z-40"
+      :class="isSidebarOpen ? 'md:w-80' : 'md:w-20'"
+    >
+      <div class="flex-1 flex flex-col min-h-0 bg-gradient-to-br from-slate-900/95 to-blue-900/95 backdrop-blur-xl border-r border-white/10 shadow-2xl">
+        <div class="flex flex-col flex-1">
+          <!-- Enhanced desktop header -->
+          <div class="p-6 border-b border-white/10">
+            <div class="flex items-center justify-between">
+              <div v-if="isSidebarOpen" class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h2 class="text-white font-bold text-xl">Dashboard</h2>
+                  <p class="text-gray-400 text-sm">Management Panel</p>
+                </div>
+              </div>
+              
+              <button
+                class="p-3 rounded-xl bg-white/10 text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300 backdrop-blur-sm hover:scale-105"
+                :class="isSidebarOpen ? '' : 'mx-auto'"
+                @click="toggleSidebar"
+                :aria-label="isSidebarOpen ? 'Close sidebar' : 'Open sidebar'"
+              >
+                <svg
+                  class="h-6 w-6 transition-transform duration-300"
+                  :class="{ 'rotate-180': isSidebarOpen }"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Enhanced navigation -->
+          <div class="flex-1 overflow-y-auto scrollbar-hide px-4 py-6">
+            <nav class="flex-1 space-y-2">
+              <router-link
+                v-for="(item, index) in navigationItems"
+                :key="item.name"
+                :to="item.path"
+                class="group flex items-center px-4 py-3 rounded-xl transition-all duration-300 relative overflow-hidden"
                 :class="[
                   route.path === item.path || route.path.startsWith(item.path + '/')
-                    ? 'text-yellow-400'
-                    : 'text-blue-300 group-hover:text-yellow-400',
-                  isSidebarOpen ? 'mr-3' : 'mx-auto',
+                    ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border border-blue-400/30 shadow-lg shadow-blue-500/10'
+                    : 'text-gray-300 hover:bg-white/10 hover:text-white border border-transparent hover:border-white/20',
+                  isSidebarOpen ? 'text-base font-medium justify-start' : 'justify-center w-14 h-14',
                 ]"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
+                :style="{ 'animation-delay': `${index * 50}ms` }"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  :d="item.icon"
-                />
-              </svg>
-              <span v-if="isSidebarOpen" class="truncate">{{ item.name }}</span>
-              <!-- Tooltip for collapsed state -->
-              <span
-                v-if="!isSidebarOpen"
-                class="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50"
-              >
-                {{ item.name }}
-              </span>
-            </router-link>
-          </nav>
-        </div>
-      </div>
+                <!-- Active indicator -->
+                <div
+                  v-if="route.path === item.path || route.path.startsWith(item.path + '/')"
+                  class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-400 to-purple-500 rounded-r-full"
+                ></div>
 
-      <div class="flex-shrink-0 flex border-t border-blue-900 p-4">
-        <div class="flex items-center w-full">
-          <div
-            class="bg-blue-900 rounded-full h-10 w-10 flex items-center justify-center text-yellow-400 font-semibold text-lg"
-          >
-            {{ authStore.user?.firstName?.charAt(0).toUpperCase() }}
-          </div>
-          <div v-if="isSidebarOpen" class="ml-3 flex-1">
-            <p class="text-sm font-medium text-white truncate">
-              {{ authStore.user?.firstName }} {{ authStore.user?.lastName }}
-            </p>
-            <div class="flex space-x-4">
-              <router-link
-                to="/profile"
-                class="text-xs font-medium text-blue-200 hover:text-yellow-400 transition-colors duration-200"
-              >
-                Profile
+                <svg
+                  class="h-6 w-6 flex-shrink-0 transition-all duration-300"
+                  :class="[
+                    route.path === item.path || route.path.startsWith(item.path + '/')
+                      ? 'text-blue-300'
+                      : 'text-gray-400 group-hover:text-white group-hover:scale-110',
+                    isSidebarOpen ? 'mr-4' : 'mx-auto',
+                  ]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    :d="item.icon"
+                  />
+                </svg>
+                
+                <span 
+                  v-if="isSidebarOpen" 
+                  class="truncate transition-all duration-300"
+                >
+                  {{ item.name }}
+                </span>
+
+                <!-- Enhanced tooltip for collapsed state -->
+                <div
+                  v-if="!isSidebarOpen"
+                  class="absolute left-full ml-4 px-3 py-2 bg-slate-800/90 backdrop-blur-sm text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 shadow-xl border border-white/10 whitespace-nowrap pointer-events-none"
+                >
+                  {{ item.name }}
+                  <div class="absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-slate-800/90 border-l border-t border-white/10 rotate-45"></div>
+                </div>
+
+                <!-- Hover effect -->
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
               </router-link>
-              <button
-                @click="logout"
-                class="text-xs font-medium text-blue-200 hover:text-red-400 transition-colors duration-200"
-              >
-                Logout
-              </button>
+            </nav>
+          </div>
+        </div>
+
+        <!-- Enhanced user section -->
+        <div class="flex-shrink-0 border-t border-white/10 p-6 bg-gradient-to-r from-slate-900/50 to-blue-900/50">
+          <div class="flex items-center w-full">
+            <div class="relative">
+              <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-full h-12 w-12 flex items-center justify-center text-white font-bold text-lg shadow-lg transition-transform duration-300 hover:scale-105">
+                {{ authStore.user?.firstName?.charAt(0).toUpperCase() }}
+              </div>
+              <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-slate-900 animate-pulse"></div>
+            </div>
+            
+            <div v-if="isSidebarOpen" class="ml-4 flex-1 opacity-100 transition-opacity duration-300">
+              <p class="text-base font-semibold text-white truncate">
+                {{ authStore.user?.firstName }} {{ authStore.user?.lastName }}
+              </p>
+              <div class="flex space-x-4 mt-1">
+                <router-link
+                  to="/profile"
+                  class="text-sm font-medium text-blue-300 hover:text-blue-200 transition-colors duration-200 hover:underline"
+                >
+                  Profile
+                </router-link>
+                <button
+                  @click="logout"
+                  class="text-sm font-medium text-gray-400 hover:text-red-400 transition-colors duration-200 hover:underline"
+                >
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -312,3 +379,59 @@ const logout = () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Custom scrollbar styling */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Custom animations */
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.router-link-exact-active {
+  animation: slideInFromLeft 0.3s ease-out;
+}
+
+/* Glassmorphism effect enhancement */
+.backdrop-blur-xl {
+  backdrop-filter: blur(20px);
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Enhanced focus states */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+/* Micro-interactions */
+.group:hover .group-hover\:scale-110 {
+  transform: scale(1.1);
+}
+
+.hover\:scale-105:hover {
+  transform: scale(1.05);
+}
+</style>

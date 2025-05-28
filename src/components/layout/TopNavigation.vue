@@ -44,7 +44,6 @@ onUnmounted(() => {
 });
 </script>
 
-
 <template>
   <nav
     class="fixed w-full top-0 z-50 font-sans transition-all duration-500"
@@ -150,85 +149,35 @@ onUnmounted(() => {
             </template>
 
             <template v-if="authStore.isAuthenticated">
-              <router-link
-                to="/projects"
-                class="relative flex items-center px-4 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/20 transition-all duration-300 font-medium text-sm group"
-                active-class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-400/30 shadow-lg shadow-blue-500/10"
-                @click="closeMobileMenu"
-              >
-                <svg
-                  class="w-4 h-4 mr-2 text-gray-400 group-hover:text-white group-hover:scale-110 transition-all duration-300"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                  />
-                </svg>
-                <span class="relative z-10">Projects</span>
-                <span
-                  class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"
-                ></span>
-              </router-link>
+              <!-- Profile Picture -->
               <router-link
                 to="/profile"
-                class="relative flex items-center px-4 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/20 transition-all duration-300 font-medium text-sm group"
-                active-class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-400/30 shadow-lg shadow-blue-500/10"
+                class="relative group rounded-full transition-all duration-300"
                 @click="closeMobileMenu"
               >
-                <svg
-                  class="w-4 h-4 mr-2 text-gray-400 group-hover:text-white group-hover:scale-110 transition-all duration-300"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <img
+                  v-if="authStore.user?.profilePicture"
+                  :src="authStore.user.profilePicture"
+                  alt="Profile Picture"
+                  class="w-8 h-8 rounded-full object-cover border-2 border-white/20 shadow-lg transition-transform duration-300 group-hover:scale-110"
+                />
+                <div
+                  v-else
+                  class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg transition-transform duration-300 group-hover:scale-110"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
-                  />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M8 5a2 2 0 012-2h2a2 2 0 012 2v0a2 2 0 01-2 2H10a2 2 0 01-2-2v0z"
-                  />
-                </svg>
-                <span class="relative z-10">Profile</span>
-                <span
-                  class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"
-                ></span>
-              </router-link>
-              <router-link
-                v-if="['Admin', 'Client'].includes(authStore.userRole)"
-                to="/projects/create"
-                class="relative flex items-center px-4 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/20 transition-all duration-300 font-medium text-sm group"
-                active-class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-400/30 shadow-lg shadow-blue-500/10"
-                @click="closeMobileMenu"
-              >
-                <svg
-                  class="w-4 h-4 mr-2 text-gray-400 group-hover:text-white group-hover:scale-110 transition-all duration-300"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                  {{ authStore.user?.firstName?.charAt(0).toUpperCase() }}
+                </div>
+                <!-- Tooltip -->
+                <div
+                  class="absolute top-full mt-2 px-3 py-2 bg-slate-800/90 backdrop-blur-sm text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 shadow-xl border border-white/10 whitespace-nowrap pointer-events-none"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                <span class="relative z-10">New Project</span>
-                <span
-                  class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"
-                ></span>
+                  {{ authStore.user?.firstName }} {{ authStore.user?.lastName }}
+                  <div
+                    class="absolute bottom-full left-1/2 transform -translate-x-1/2 translate-y-1 w-2 h-2 bg-slate-800/90 border-t border-l border-white/10 rotate-45"
+                  ></div>
+                </div>
               </router-link>
+
               <button
                 @click="logout"
                 class="relative group flex items-center px-4 py-2 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-400/20 transition-all duration-300 font-medium text-sm"
@@ -442,8 +391,31 @@ onUnmounted(() => {
               </svg>
               Projects
             </router-link>
+            <!-- Profile Picture -->
             <router-link
-              v-if="['Admin', 'Client'].includes(authStore.userRole)"
+              to="/profile"
+              class="group flex items-center px-3 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/20 transition-all duration-300 font-medium"
+              active-class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-400/30"
+              @click="closeMobileMenu"
+            >
+              <img
+                v-if="authStore.user?.profilePicture"
+                :src="authStore.user.profilePicture"
+                alt="Profile Picture"
+                class="w-8 h-8 rounded-full object-cover border-2 border-white/20 shadow-lg transition-transform duration-300 group-hover:scale-110 mr-3"
+              />
+              <div
+                v-else
+                class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg transition-transform duration-300 group-hover:scale-110 mr-3"
+              >
+                {{ authStore.user?.firstName?.charAt(0).toUpperCase() }}
+              </div>
+              Profile
+            </router-link>
+            <router-link
+              v-if="
+                ['admin', 'client'].includes(authStore.userRole.toLowerCase())
+              "
               to="/projects/create"
               class="group flex items-center px-3 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/20 transition-all duration-300 font-medium"
               active-class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-400/30"
@@ -491,7 +463,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* Custom scrollbar styling */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -501,7 +472,6 @@ onUnmounted(() => {
   display: none;
 }
 
-/* Custom animations */
 @keyframes slideInFromLeft {
   from {
     opacity: 0;
@@ -517,25 +487,23 @@ onUnmounted(() => {
   animation: slideInFromLeft 0.3s ease-out;
 }
 
-/* Glassmorphism effect enhancement */
 .backdrop-blur-xl {
   backdrop-filter: blur(20px);
 }
 
-/* Smooth transitions for all interactive elements */
 * {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-property: color, background-color, border-color,
+    text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter,
+    backdrop-filter;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Enhanced focus states */
 button:focus-visible,
 a:focus-visible {
   outline: 2px solid #60a5fa;
   outline-offset: 2px;
 }
 
-/* Micro-interactions */
 .group:hover .group-hover\:scale-110 {
   transform: scale(1.1);
 }
@@ -544,5 +512,3 @@ a:focus-visible {
   transform: scale(1.05);
 }
 </style>
-
-

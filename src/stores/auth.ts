@@ -12,6 +12,7 @@ interface User {
   phone: string;
   company: string;
   isActive: boolean;
+  profilePicture?: string | null; // Add profilePicture field
 }
 
 interface LoginCredentials {
@@ -192,6 +193,10 @@ export const useAuthStore = defineStore("auth", {
 
         this.token = token;
         apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+        // Fetch latest user data to ensure profilePicture is up-to-date
+        const response = await apiClient.get("/users/me");
+        this.setUser(response.data);
 
         this.loading = false;
         return true;

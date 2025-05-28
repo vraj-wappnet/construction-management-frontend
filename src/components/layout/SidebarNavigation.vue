@@ -4,7 +4,7 @@ import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "../../stores/auth";
 
 const props = defineProps<{
-  isOpen?: boolean; // Optional prop for external control
+  isOpen?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -16,30 +16,23 @@ const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 
-// Reactive state for sidebar visibility
 const isSidebarOpen = ref<boolean>(false);
 const isMobile = ref<boolean>(window.innerWidth < 768);
 
-// Sync with parent prop if provided
 watch(() => props.isOpen, (newVal) => {
   if (newVal !== undefined) {
     isSidebarOpen.value = newVal;
   }
 });
 
-// Update isMobile on window resize
 const handleResize = () => {
   const wasMobile = isMobile.value;
   isMobile.value = window.innerWidth < 768;
-  
-  // Only auto-toggle if the mobile state changed
   if (wasMobile !== isMobile.value) {
     if (isMobile.value) {
-      // Just switched to mobile - close sidebar
       isSidebarOpen.value = false;
       emit("closeSidebar");
     } else {
-      // Just switched to desktop - open sidebar
       isSidebarOpen.value = true;
       emit("openSidebar");
     }
@@ -47,10 +40,8 @@ const handleResize = () => {
 };
 
 onMounted(() => {
-  // Initialize based on screen size
   isMobile.value = window.innerWidth < 768;
   isSidebarOpen.value = !isMobile.value;
-  
   window.addEventListener("resize", handleResize);
 });
 
@@ -58,7 +49,6 @@ onUnmounted(() => {
   window.removeEventListener("resize", handleResize);
 });
 
-// Toggle sidebar visibility
 const toggleSidebar = () => {
   isSidebarOpen.value = !isSidebarOpen.value;
   if (isSidebarOpen.value) {
@@ -121,16 +111,13 @@ const logout = () => {
       role="dialog"
       aria-modal="true"
     >
-      <!-- Enhanced backdrop with blur effect -->
       <div
         class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
         @click="toggleSidebar"
       ></div>
 
-      <!-- Mobile sidebar content with glassmorphism -->
       <div class="relative flex-1 flex flex-col max-w-sm w-full bg-gradient-to-br from-slate-900/95 to-blue-900/95 backdrop-blur-xl border-r border-white/10 shadow-2xl">
         <div class="flex flex-col h-0 flex-1">
-          <!-- Enhanced mobile header -->
           <div class="p-6 border-b border-white/10">
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-3">
@@ -153,7 +140,6 @@ const logout = () => {
             </div>
           </div>
 
-          <!-- Enhanced navigation -->
           <div class="flex-1 overflow-y-auto scrollbar-hide px-4 py-6">
             <nav class="space-y-2">
               <router-link
@@ -169,12 +155,10 @@ const logout = () => {
                 :style="{ 'animation-delay': `${index * 50}ms` }"
                 @click="toggleSidebar"
               >
-                <!-- Active indicator -->
                 <div
                   v-if="route.path === item.path || route.path.startsWith(item.path + '/')"
                   class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-400 to-purple-500 rounded-r-full"
                 ></div>
-                
                 <svg
                   class="mr-4 h-6 w-6 flex-shrink-0 transition-all duration-300"
                   :class="[
@@ -195,22 +179,29 @@ const logout = () => {
                   />
                 </svg>
                 <span class="transition-all duration-300">{{ item.name }}</span>
-                
-                <!-- Hover effect -->
                 <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
               </router-link>
             </nav>
           </div>
         </div>
 
-        <!-- Enhanced user section -->
+        <!-- Mobile User Section -->
         <div class="flex-shrink-0 border-t border-white/10 p-6 bg-gradient-to-r from-slate-900/50 to-blue-900/50">
           <div class="flex items-center w-full">
             <div class="relative">
-              <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-full h-12 w-12 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+              <img
+                v-if="authStore.user?.profilePicture"
+                :src="authStore.user.profilePicture"
+                alt="Profile Picture"
+                class="w-12 h-12 rounded-full object-cover border-2 border-white/20 shadow-lg transition-transform duration-300 hover:scale-105"
+              />
+              <div
+                v-else
+                class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-full h-12 w-12 flex items-center justify-center text-white font-bold text-lg shadow-lg transition-transform duration-300 hover:scale-105"
+              >
                 {{ authStore.user?.firstName?.charAt(0).toUpperCase() }}
               </div>
-              <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-slate-900"></div>
+              <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-slate-900 animate-pulse"></div>
             </div>
             <div class="ml-4 flex-1">
               <p class="text-base font-semibold text-white truncate">
@@ -244,7 +235,6 @@ const logout = () => {
     >
       <div class="flex-1 flex flex-col min-h-0 bg-gradient-to-br from-slate-900/95 to-blue-900/95 backdrop-blur-xl border-r border-white/10 shadow-2xl">
         <div class="flex flex-col flex-1">
-          <!-- Enhanced desktop header -->
           <div class="p-6 border-b border-white/10">
             <div class="flex items-center justify-between">
               <div v-if="isSidebarOpen" class="flex items-center space-x-3">
@@ -258,7 +248,6 @@ const logout = () => {
                   <p class="text-gray-400 text-sm">Management Panel</p>
                 </div>
               </div>
-              
               <button
                 class="p-3 rounded-xl bg-white/10 text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300 backdrop-blur-sm hover:scale-105"
                 :class="isSidebarOpen ? '' : 'mx-auto'"
@@ -278,7 +267,6 @@ const logout = () => {
             </div>
           </div>
 
-          <!-- Enhanced navigation -->
           <div class="flex-1 overflow-y-auto scrollbar-hide px-4 py-6">
             <nav class="flex-1 space-y-2">
               <router-link
@@ -294,12 +282,10 @@ const logout = () => {
                 ]"
                 :style="{ 'animation-delay': `${index * 50}ms` }"
               >
-                <!-- Active indicator -->
                 <div
                   v-if="route.path === item.path || route.path.startsWith(item.path + '/')"
                   class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-400 to-purple-500 rounded-r-full"
                 ></div>
-
                 <svg
                   class="h-6 w-6 flex-shrink-0 transition-all duration-300"
                   :class="[
@@ -320,15 +306,12 @@ const logout = () => {
                     :d="item.icon"
                   />
                 </svg>
-                
                 <span 
                   v-if="isSidebarOpen" 
                   class="truncate transition-all duration-300"
                 >
                   {{ item.name }}
                 </span>
-
-                <!-- Enhanced tooltip for collapsed state -->
                 <div
                   v-if="!isSidebarOpen"
                   class="absolute left-full ml-4 px-3 py-2 bg-slate-800/90 backdrop-blur-sm text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 shadow-xl border border-white/10 whitespace-nowrap pointer-events-none"
@@ -336,24 +319,30 @@ const logout = () => {
                   {{ item.name }}
                   <div class="absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-slate-800/90 border-l border-t border-white/10 rotate-45"></div>
                 </div>
-
-                <!-- Hover effect -->
                 <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
               </router-link>
             </nav>
           </div>
         </div>
 
-        <!-- Enhanced user section -->
+        <!-- Desktop User Section -->
         <div class="flex-shrink-0 border-t border-white/10 p-6 bg-gradient-to-r from-slate-900/50 to-blue-900/50">
           <div class="flex items-center w-full">
             <div class="relative">
-              <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-full h-12 w-12 flex items-center justify-center text-white font-bold text-lg shadow-lg transition-transform duration-300 hover:scale-105">
+              <img
+                v-if="authStore.user?.profilePicture"
+                :src="authStore.user.profilePicture"
+                alt="Profile Picture"
+                class="w-12 h-12 rounded-full object-cover border-2 border-white/20 shadow-lg transition-transform duration-300 hover:scale-105"
+              />
+              <div
+                v-else
+                class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-full h-12 w-12 flex items-center justify-center text-white font-bold text-lg shadow-lg transition-transform duration-300 hover:scale-105"
+              >
                 {{ authStore.user?.firstName?.charAt(0).toUpperCase() }}
               </div>
               <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-slate-900 animate-pulse"></div>
             </div>
-            
             <div v-if="isSidebarOpen" class="ml-4 flex-1 opacity-100 transition-opacity duration-300">
               <p class="text-base font-semibold text-white truncate">
                 {{ authStore.user?.firstName }} {{ authStore.user?.lastName }}
@@ -381,7 +370,6 @@ const logout = () => {
 </template>
 
 <style scoped>
-/* Custom scrollbar styling */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -391,7 +379,6 @@ const logout = () => {
   display: none;
 }
 
-/* Custom animations */
 @keyframes slideInFromLeft {
   from {
     opacity: 0;
@@ -407,26 +394,22 @@ const logout = () => {
   animation: slideInFromLeft 0.3s ease-out;
 }
 
-/* Glassmorphism effect enhancement */
 .backdrop-blur-xl {
   backdrop-filter: blur(20px);
 }
 
-/* Smooth transitions for all interactive elements */
 * {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
 
-/* Enhanced focus states */
 button:focus-visible,
 a:focus-visible {
   outline: 2px solid #60a5fa;
   outline-offset: 2px;
 }
 
-/* Micro-interactions */
 .group:hover .group-hover\:scale-110 {
   transform: scale(1.1);
 }

@@ -180,15 +180,6 @@ onMounted(fetchProfile);
         </div>
       </Transition>
 
-      <!-- Page Header -->
-      <div class="mb-10">
-        <h1 class="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-gray-900 to-indigo-600 bg-clip-text text-transparent tracking-tight">
-          My Profile
-        </h1>
-        <p class="mt-2 text-gray-600 text-base sm:text-lg">
-          Manage your personal information
-        </p>
-      </div>
 
       <!-- Loading State -->
       <div v-if="loading" class="flex flex-col items-center justify-center py-20">

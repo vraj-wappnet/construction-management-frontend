@@ -178,6 +178,7 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
 });
+347414
 
 // Navigation guard
 router.beforeEach((to, from, next) => {

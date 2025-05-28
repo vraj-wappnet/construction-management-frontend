@@ -208,7 +208,11 @@ export const profileService = {
   getUserProfile() {
     return apiClient.get("/users/me");
   },
-  updateProfile(data: any) {
-    return apiClient.patch("/users/me", data);
+ async updateProfile(data: any) {
+    return await apiClient.patch("/users/me", data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
   },
 };

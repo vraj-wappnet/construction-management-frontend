@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
+import PaymentForm from "./PaymentForm.vue";
 import { useAuthStore } from "../../stores/auth";
 import { projectService } from "../../services/api";
 
-// Define interfaces for type safety
 interface Project {
   id: number;
   name: string;
@@ -24,12 +24,12 @@ interface SiteEngineer {
   lastName: string;
 }
 
-interface ApiError {
-  response?: {
-    data?: {
-      message?: string;
-    };
-  };
+interface Payment {
+  id: number;
+  project: { id: number };
+  payee: { id: number };
+  status: string;
+  amount: number;
 }
 
 interface Toast {
@@ -50,6 +50,7 @@ interface UpdateForm {
 const authStore = useAuthStore();
 
 const projects = ref<Project[]>([]);
+const payments = ref<Payment[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const searchQuery = ref("");
@@ -57,8 +58,10 @@ const statusFilter = ref("All");
 const showUpdateModal = ref(false);
 const showAssignModal = ref(false);
 const showDetailModal = ref(false);
+const showPaymentModal = ref(false);
 const selectedProject = ref<Project | null>(null);
 const projectDetail = ref<Project | null>(null);
+const selectedPayeeId = ref<number | null>(null);
 const updateForm = ref<UpdateForm>({
   name: "",
   description: "",
@@ -76,13 +79,37 @@ const toast = ref<Toast>({
 });
 
 const userRole = computed(() => authStore.userRole as string);
-const userId = computed(() =>
-  authStore.user?.id ? Number(authStore.user.id) : 0
-);
+const userId = computed(() => Number(authStore.user?.id) || 0);
+
+const canInitiatePayment = computed(() => ["client", "contractor"].includes(userRole.value));
+const canCreateProject = computed(() => ["admin", "client"].includes(userRole.value));
+const canUpdateDelete = computed(() => {
+  const canUpdate = ["admin", "client"].includes(userRole.value);
+  console.log("canUpdateDelete:", { userRole: userRole.value, canUpdate });
+  return canUpdate;
+});
+
+// Debug payment modal conditions
+watch([showPaymentModal, selectedProject, selectedPayeeId], () => {
+  console.log("Payment modal state:", {
+    showPaymentModal: showPaymentModal.value,
+    selectedProjectId: selectedProject.value?.id,
+    selectedPayeeId: selectedPayeeId.value,
+  });
+});
 
 onMounted(async () => {
-  console.log("User Role:", userRole.value, "User ID:", userId.value);
-  await fetchProjects();
+  console.log("Auth state:", {
+    userRole: userRole.value,
+    userId: userId.value,
+    authStore: authStore.user,
+  });
+  if (!authStore.user?.id || !userRole.value) {
+    console.warn("Invalid auth state, redirecting to login");
+    showToast("Please log in to view projects", "error");
+    // window.location.href = "/login";
+  }
+  await Promise.all([fetchProjects(), fetchPaymentHistory()]);
   if (userRole.value === "contractor") {
     await fetchSiteEngineers();
   }
@@ -92,52 +119,58 @@ const fetchProjects = async () => {
   try {
     loading.value = true;
     error.value = null;
-    console.log(
-      "Fetching projects for role:",
-      userRole.value,
-      "with token:",
-      localStorage.getItem("token")
-    );
+    console.log("Fetching projects for role:", userRole.value, "userId:", userId.value);
     const response = await (userRole.value === "contractor"
       ? projectService.getProjects()
       : projectService.getMyProjects());
-    console.log("API Response:", response);
     projects.value = Array.isArray(response.data)
       ? response.data
       : response.data?.projects || [];
-    // Ensure acceptedByContractor is set if not provided by backend
-    projects.value = projects.value.map(project => ({
+    projects.value = projects.value.map((project) => ({
       ...project,
-      acceptedByContractor: project.acceptedByContractor ?? 
-        (project.contractors?.some(c => c.id === userId.value) && project.status !== "planned")
+      acceptedByContractor:
+        project.acceptedByContractor ??
+        (project.contractors?.some((c: { id: number }) => c.id === userId.value) &&
+          project.status !== "planned"),
     }));
-    console.log("Assigned Projects:", projects.value);
-  } catch (err: unknown) {
-    const apiError = err as ApiError;
-    error.value = apiError.response?.data?.message || "Failed to load projects";
+    console.log("Fetched projects:", projects.value);
+    if (projects.value.length === 0) {
+      console.warn("No projects returned from API");
+      error.value = "No projects found. Please check your permissions or contact support.";
+    }
+  } catch (err: any) {
+    error.value = err.response?.data?.message || "Failed to load projects";
     console.error("Fetch Projects Error:", err);
   } finally {
     loading.value = false;
   }
 };
 
+const fetchPaymentHistory = async () => {
+  try {
+    console.log("Fetching payment history for user:", userId.value);
+    const response = await projectService.getPaymentHistory();
+    payments.value = response.data;
+    console.log("Fetched payment history:", payments.value);
+  } catch (err: any) {
+    console.error("Fetch Payment History Error:", err);
+    showToast("Failed to load payment history", "error");
+  }
+};
+
 const fetchProjectDetail = async (projectId: number) => {
   try {
     const response = await projectService.getProject(projectId);
-    console.log("Project Detail Response:", response);
     projectDetail.value = {
       ...response.data,
-      acceptedByContractor: response.data.acceptedByContractor ?? 
-        (response.data.contractors?.some((c: { id: number }) => c.id === userId.value) && 
-         response.data.status !== "planned")
+      acceptedByContractor:
+        response.data.acceptedByContractor ??
+        (response.data.contractors?.some((c: { id: number }) => c.id === userId.value) &&
+          response.data.status !== "planned"),
     };
     showDetailModal.value = true;
-  } catch (err: unknown) {
-    const apiError = err as ApiError;
-    showToast(
-      apiError.response?.data?.message || "Failed to load project details",
-      "error"
-    );
+  } catch (err: any) {
+    showToast(err.response?.data?.message || "Failed to load project details", "error");
     console.error("Fetch Project Detail Error:", err);
   }
 };
@@ -147,7 +180,7 @@ const fetchSiteEngineers = async () => {
     const response = await projectService.getSiteEngineers();
     siteEngineers.value = response.data;
     console.log("Site Engineers:", siteEngineers.value);
-  } catch (err: unknown) {
+  } catch (err: any) {
     showToast("Failed to load site engineers", "error");
     console.error("Fetch Site Engineers:", err);
   }
@@ -156,13 +189,6 @@ const fetchSiteEngineers = async () => {
 const navigateToProjectDetail = (projectId: number) => {
   fetchProjectDetail(projectId);
 };
-
-const canCreateProject = computed(() =>
-  ["admin", "client"].includes(userRole.value)
-);
-const canUpdateDelete = computed(() =>
-  ["admin", "client"].includes(userRole.value)
-);
 
 const filteredProjects = computed(() => {
   let filtered = [...projects.value];
@@ -175,28 +201,26 @@ const filteredProjects = computed(() => {
     );
   }
   if (statusFilter.value !== "All") {
-    filtered = filtered.filter(
-      (project) => project.status === statusFilter.value
-    );
+    filtered = filtered.filter((project) => project.status === statusFilter.value);
   }
-  console.log("Filtered Projects:", filtered);
+  console.log("Filtered projects:", filtered);
   return filtered;
 });
 
 const getProjectStatusClass = (status: string) => {
   switch (status) {
     case "planned":
-      return "bg-blue-500 text-white";
+      return "bg-blue-100 text-blue-800";
     case "in_progress":
-      return "bg-yellow-500 text-white";
+      return "bg-yellow-100 text-yellow-800";
     case "completed":
-      return "bg-green-500 text-white";
+      return "bg-green-100 text-green-800";
     case "delayed":
-      return "bg-red-500 text-white";
+      return "bg-red-100 text-red-800";
     case "cancelled":
-      return "bg-gray-500 text-white";
+      return "bg-gray-100 text-gray-800";
     default:
-      return "bg-gray-500 text-white";
+      return "bg-gray-100 text-gray-800";
   }
 };
 
@@ -206,13 +230,8 @@ const openUpdateModal = (project: Project) => {
     name: project.name,
     description: project.description,
     location: project.location,
-    startDate:
-      project.startDate.split("T")[0] ||
-      new Date(project.startDate).toISOString().split("T")[0],
-    endDate: project.endDate
-      ? project.endDate.split("T")[0] ||
-        new Date(project.endDate).toISOString().split("T")[0]
-      : "",
+    startDate: project.startDate.split("T")[0],
+    endDate: project.endDate ? project.endDate.split("T")[0] : "",
     status: project.status,
   };
   showUpdateModal.value = true;
@@ -228,19 +247,12 @@ const updateProject = async () => {
       showToast("End date cannot be earlier than start date", "error");
       return;
     }
-    await projectService.updateProject(
-      selectedProject.value.id,
-      updateForm.value
-    );
+    await projectService.updateProject(selectedProject.value.id, updateForm.value);
     await fetchProjects();
     showUpdateModal.value = false;
     showToast("Project updated successfully", "success");
-  } catch (err: unknown) {
-    const apiError = err as ApiError;
-    showToast(
-      apiError.response?.data?.message || "Failed to update project",
-      "error"
-    );
+  } catch (err: any) {
+    showToast(err.response?.data?.message || "Failed to update project", "error");
   }
 };
 
@@ -250,39 +262,29 @@ const deleteProject = async (projectId: number) => {
     await projectService.deleteProject(projectId);
     await fetchProjects();
     showToast("Project deleted successfully", "success");
-  } catch (err: unknown) {
-    const apiError = err as ApiError;
-    showToast(
-      apiError.response?.data?.message || "Failed to delete project",
-      "error"
-    );
+  } catch (err: any) {
+    showToast(err.response?.data?.message || "Failed to delete project", "error");
   }
 };
 
 const acceptProject = async (projectId: number) => {
   try {
     await projectService.acceptProject(projectId);
-    // Optimistically update the local project state
-    projects.value = projects.value.map(project =>
+    projects.value = projects.value.map((project) =>
       project.id === projectId
         ? {
             ...project,
             acceptedByContractor: true,
             contractors: project.contractors
               ? [...project.contractors, { id: userId.value }]
-              : [{ id: userId.value }]
+              : [{ id: userId.value }],
           }
         : project
     );
     showToast("Project accepted successfully", "success");
-    // Fetch updated projects from backend to ensure consistency
     await fetchProjects();
-  } catch (err: unknown) {
-    const apiError = err as ApiError;
-    showToast(
-      apiError.response?.data?.message || "Failed to accept project",
-      "error"
-    );
+  } catch (err: any) {
+    showToast(err.response?.data?.message || "Failed to accept project", "error");
   }
 };
 
@@ -302,20 +304,108 @@ const assignSiteEngineer = async () => {
     await fetchProjects();
     showAssignModal.value = false;
     showToast("Site engineer assigned successfully", "success");
-  } catch (err: unknown) {
-    const apiError = err as ApiError;
-    showToast(
-      apiError.response?.data?.message || "Failed to assign site engineer",
-      "error"
-    );
+  } catch (err: any) {
+    showToast(err.response?.data?.message || "Failed to assign site engineer", "error");
   }
 };
 
+const openPaymentModal = (project: Project, payeeId: number) => {
+  if (!Number.isInteger(payeeId) || payeeId <= 0) {
+    console.error("Invalid payeeId:", payeeId);
+    showToast("Invalid payee selected", "error");
+    return;
+  }
+  console.log("Opening payment modal:", { projectId: project.id, payeeId });
+  selectedProject.value = project;
+  selectedPayeeId.value = payeeId;
+  showPaymentModal.value = true;
+};
+
+const handlePayeeChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement;
+  if (target && selectedProject.value) {
+    const payeeId = Number(target.value);
+    console.log("Payee selected:", { payeeId });
+    if (isNaN(payeeId) || payeeId <= 0) {
+      console.error("Invalid payeeId from dropdown:", target.value);
+      showToast("Please select a valid payee", "error");
+      return;
+    }
+    openPaymentModal(selectedProject.value, payeeId);
+  }
+};
+
+const handlePaymentSuccess = async () => {
+  console.log("Payment success handled for project:", selectedProject.value?.id, "payee:", selectedPayeeId.value);
+  showToast("Payment processed successfully", "success");
+  showPaymentModal.value = false;
+  selectedProject.value = null;
+  selectedPayeeId.value = null;
+  await Promise.all([fetchProjects(), fetchPaymentHistory()]);
+};
+
+const handlePaymentError = (message: string) => {
+  console.error("Payment error handled:", message);
+  showToast(message || "Failed to process payment", "error");
+  showPaymentModal.value = false;
+  selectedProject.value = null;
+  selectedPayeeId.value = null;
+};
+
+const canShowPaymentButton = (project: Project) => {
+  console.log("canShowPaymentButton:", {
+    projectId: project.id,
+    userRole: userRole.value,
+    userId: userId.value,
+    canInitiate: canInitiatePayment.value,
+    contractors: project.contractors,
+    siteEngineers: project.siteEngineers,
+    status: project.status,
+  });
+  if (!canInitiatePayment.value) return false;
+  if (userRole.value === "client") {
+    const hasContractors = (project.contractors?.length ?? 0) > 0;
+    console.log("Client check:", { inProgress: project.status === "in_progress", hasContractors });
+    return project.status === "in_progress" && hasContractors;
+  }
+  if (userRole.value === "contractor") {
+    const isAssigned = project.contractors?.some((c: { id: number }) => c.id === userId.value);
+    const hasSiteEngineers = (project.siteEngineers?.length ?? 0) > 0;
+    console.log("Contractor check:", { isAssigned, hasSiteEngineers });
+    return isAssigned && hasSiteEngineers;
+  }
+  return false;
+};
+
+const isPayeePaid = (projectId: number, payeeId: number) => {
+  const paid = payments.value.some(
+    (payment) =>
+      payment.project.id === projectId &&
+      payment.payee.id === payeeId &&
+      payment.status === "succeeded"
+  );
+  console.log("isPayeePaid:", { projectId, payeeId, paid });
+  return paid;
+};
+
+const getPayeeOptions = (project: Project) => {
+  const options = userRole.value === "client"
+    ? project.contractors || []
+    : userRole.value === "contractor"
+    ? project.siteEngineers || []
+    : [];
+  console.log("getPayeeOptions:", {
+    projectId: project.id,
+    options,
+    valid: options.every(payee => typeof payee.id === "number" && payee.id > 0),
+  });
+  return options.filter(payee => typeof payee.id === "number" && payee.id > 0);
+};
+
 const showToast = (message: string, type: "success" | "error") => {
+  console.log("Showing toast:", { message, type });
   toast.value = { message, type, visible: true };
-  setTimeout(() => {
-    toast.value.visible = false;
-  }, 3000);
+  setTimeout(() => (toast.value.visible = false), 3000);
 };
 </script>
 
@@ -326,10 +416,8 @@ const showToast = (message: string, type: "success" | "error") => {
       <div
         v-if="toast.visible"
         :class="[
-          'fixed top-4 right-4 p-4 rounded-lg shadow-lg transition-all duration-300',
-          toast.type === 'success'
-            ? 'bg-green-100 text-green-800'
-            : 'bg-red-100 text-red-800',
+          'fixed top-4 right-4 p-4 rounded-md shadow-lg',
+          toast.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800',
         ]"
       >
         {{ toast.message }}
@@ -342,40 +430,39 @@ const showToast = (message: string, type: "success" | "error") => {
         <div>
           <h1 class="text-2xl font-bold text-gray-900">Projects</h1>
           <p class="mt-1 text-sm text-gray-500">
-            {{
-              userRole === "contractor"
-                ? "View and accept your assigned projects"
-                : userRole === "site_engineer"
-                ? "View your assigned projects"
-                : userRole === "client"
-                ? "Manage your created projects"
-                : "Manage all projects"
-            }}
+            <template v-if="userRole === 'contractor'">
+              View and accept your assigned projects
+            </template>
+            <template v-else-if="userRole === 'site_engineer'">
+              View your assigned projects
+            </template>
+            <template v-else-if="userRole === 'client'">
+              Manage your created projects
+            </template>
+            <template v-else>
+              Manage all projects
+            </template>
           </p>
         </div>
         <div class="flex space-x-4">
           <router-link
             v-if="userRole === 'contractor'"
             to="/projects/accepted"
-            class="inline-flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg shadow-sm hover:bg-yellow-700 transition-all duration-300"
+            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             View Accepted Projects
           </router-link>
           <router-link
             v-if="canCreateProject"
             to="/projects/create"
-            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 transition-all duration-300"
+            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5 mr-2"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
+            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
-                fill-rule="evenodd"
-                d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                clip-rule="evenodd"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
               />
             </svg>
             New Project
@@ -391,11 +478,11 @@ const showToast = (message: string, type: "success" | "error") => {
           v-model="searchQuery"
           type="text"
           placeholder="Search by name or location..."
-          class="w-full sm:w-64 h-10 px-4 rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          class="w-full sm:w-64 h-10 px-4 rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500"
         />
         <select
           v-model="statusFilter"
-          class="w-full sm:w-48 h-10 px-4 rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          class="w-full sm:w-48 h-10 px-4 rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="All">All Statuses</option>
           <option value="planned">Planned</option>
@@ -410,7 +497,6 @@ const showToast = (message: string, type: "success" | "error") => {
       <div v-if="loading" class="flex justify-center my-8">
         <svg
           class="animate-spin h-8 w-8 text-blue-600"
-          xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
         >
@@ -421,71 +507,66 @@ const showToast = (message: string, type: "success" | "error") => {
             r="10"
             stroke="currentColor"
             stroke-width="4"
-          ></circle>
+          />
           <path
             class="opacity-75"
             fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+          />
         </svg>
       </div>
 
       <!-- Error State -->
-      <div v-else-if="error" class="bg-red-100 p-4 rounded-lg">
+      <div v-else-if="error" class="bg-red-100 p-4 rounded-md">
         <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <svg
-              class="h-5 w-5 text-red-800"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clip-rule="evenodd"
-              />
-            </svg>
-          </div>
-          <div class="ml-3">
-            <p class="text-sm font-medium text-red-800">{{ error }}</p>
-          </div>
+          <svg
+            class="h-5 w-5 text-red-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <p class="ml-3 text-sm text-red-600">{{ error }}</p>
         </div>
       </div>
 
       <!-- Empty State -->
       <div
         v-else-if="filteredProjects.length === 0"
-        class="text-center py-12 bg-white rounded-lg shadow"
+        class="text-center py-12 bg-white rounded-md shadow"
       >
         <svg
           class="mx-auto h-12 w-12 text-gray-400"
-          xmlns="http://www.w3.org/2000/svg"
           fill="none"
-          viewBox="0 0 24 24"
           stroke="currentColor"
+          viewBox="0 0 24 24"
         >
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
-            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
           />
         </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900">
-          No projects found
-        </h3>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No projects found</h3>
         <p class="mt-1 text-sm text-gray-500">
-          {{
-            searchQuery || statusFilter !== "All"
-              ? "Try adjusting your search or filter criteria."
-              : "No projects assigned. Contact your admin to get assigned to projects."
-          }}
+          <template v-if="searchQuery || statusFilter !== 'All'">
+            Try adjusting your search or filter.
+          </template>
+          <template v-else>
+            No projects assigned. Contact your admin.
+          </template>
         </p>
         <div v-if="canCreateProject" class="mt-6">
           <router-link
             to="/projects/create"
-            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700"
+            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             New Project
           </router-link>
@@ -494,17 +575,13 @@ const showToast = (message: string, type: "success" | "error") => {
 
       <!-- Projects Grid -->
       <div v-else class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <div
-          v-for="project in filteredProjects"
-          :key="project.id"
-          class="bg-white overflow-hidden shadow rounded-lg transition-all duration-200"
-        >
+        <div v-for="project in filteredProjects" :key="project.id" class="bg-white rounded-md shadow">
           <div class="px-4 py-5 sm:p-6">
             <div class="flex items-center justify-between">
               <div class="flex-1 truncate">
                 <div class="flex items-center space-x-3">
                   <h3 class="text-sm font-medium text-gray-900 truncate">
-                    {{ project.name }}
+                    {{ project.name || "Unnamed Project" }}
                   </h3>
                   <span
                     :class="[
@@ -512,11 +589,11 @@ const showToast = (message: string, type: "success" | "error") => {
                       'px-2 py-1 text-xs rounded-full',
                     ]"
                   >
-                    {{ project.status }}
+                    {{ project.status || "Unknown" }}
                   </span>
                 </div>
                 <p class="mt-1 text-sm text-gray-500 truncate">
-                  {{ project.location }}
+                  {{ project.location || "No location specified" }}
                 </p>
               </div>
             </div>
@@ -524,53 +601,42 @@ const showToast = (message: string, type: "success" | "error") => {
               <div>
                 <p class="text-xs font-medium text-gray-500">Start Date</p>
                 <p class="text-sm text-gray-900">
-                  {{ new Date(project.startDate).toLocaleDateString() }}
+                  {{ project.startDate ? new Date(project.startDate).toLocaleDateString() : "N/A" }}
                 </p>
               </div>
               <div>
                 <p class="text-xs font-medium text-gray-500">End Date</p>
                 <p class="text-sm text-gray-900">
-                  {{
-                    project.endDate
-                      ? new Date(project.endDate).toLocaleDateString()
-                      : "N/A"
-                  }}
+                  {{ project.endDate ? new Date(project.endDate).toLocaleDateString() : "N/A" }}
                 </p>
               </div>
             </div>
-            <!-- Role-Specific Actions -->
             <div class="mt-4 flex flex-wrap gap-2">
               <button
-                v-if="
-                  canUpdateDelete &&
-                  (userRole === 'admin' || project.client?.id === userId)
-                "
-                @click.stop="openUpdateModal(project)"
-                class="inline-flex items-center px-3 py-1 bg-yellow-600 text-white rounded-md text-sm hover:bg-yellow-700"
+                v-if="canUpdateDelete && (userRole === 'admin' || project.client?.id === userId)"
+                @click="openUpdateModal(project)"
+                class="px-3 py-1 bg-yellow-600 text-white rounded-md text-sm hover:bg-yellow-700"
               >
                 Edit
               </button>
               <button
-                v-if="
-                  canUpdateDelete &&
-                  (userRole === 'admin' || project.client?.id === userId)
-                "
-                @click.stop="deleteProject(project.id)"
-                class="inline-flex items-center px-3 py-1 bg-red-600 text-white rounded-md text-sm hover:bg-red-700"
+                v-if="canUpdateDelete && (userRole === 'admin' || project.client?.id === userId)"
+                @click="deleteProject(project.id)"
+                class="px-3 py-1 bg-red-600 text-white rounded-md text-sm hover:bg-red-700"
               >
                 Delete
               </button>
               <div v-if="userRole === 'contractor'">
                 <button
                   v-if="!project.acceptedByContractor"
-                  @click.stop="acceptProject(project.id)"
-                  class="inline-flex items-center px-4 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700"
+                  @click="acceptProject(project.id)"
+                  class="px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700"
                 >
                   Accept
                 </button>
                 <span
                   v-else
-                  class="inline-flex items-center px-4 py-1 bg-green-100 text-green-800 rounded-md text-sm"
+                  class="px-3 py-1 bg-green-100 text-green-800 rounded-md text-sm"
                 >
                   Accepted
                 </span>
@@ -578,27 +644,59 @@ const showToast = (message: string, type: "success" | "error") => {
               <button
                 v-if="
                   userRole === 'contractor' &&
-                  project.contractors?.some((c) => c.id === userId) &&
+                  project.contractors?.some((c: { id: number }) => c.id === userId) &&
                   !project.siteEngineers?.length
                 "
                 @click="openAssignModal(project)"
-                class="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+                class="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
               >
                 Assign Site Engineer
               </button>
               <button
                 v-if="
                   userRole === 'contractor' &&
-                  project.contractors?.some((c) => c.id === userId) &&
+                  project.contractors?.some((c: { id: number }) => c.id === userId) &&
                   project.siteEngineers?.length
                 "
-                class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-md text-sm"
+                class="px-3 py-1 bg-blue-100 text-blue-600 rounded-md text-sm"
+                disabled
               >
                 Site Engineer Assigned
               </button>
+              <div v-if="canShowPaymentButton(project)">
+                <select
+                  v-if="getPayeeOptions(project).length > 1"
+                  @change="handlePayeeChange"
+                  class="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+                >
+                  <option value="" disabled selected>Select Payee</option>
+                  <option
+                    v-for="payee in getPayeeOptions(project)"
+                    :key="payee.id"
+                    :value="payee.id"
+                    :disabled="isPayeePaid(project.id, payee.id)"
+                  >
+                    Payee ID: {{ payee.id }} {{ isPayeePaid(project.id, payee.id) ? "(Paid)" : "" }}
+                  </option>
+                </select>
+                <button
+                  v-else-if="getPayeeOptions(project).length === 1 && !isPayeePaid(project.id, getPayeeOptions(project)[0].id)"
+                  @click="openPaymentModal(project, getPayeeOptions(project)[0].id)"
+                  class="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+                >
+                  Pay
+                </button>
+                <span
+                  v-else-if="getPayeeOptions(project).length === 1 && isPayeePaid(project.id, getPayeeOptions(project)[0].id)"
+                  class="px-3 py-1 bg-green-100 text-green-800 rounded-md text-sm"
+                >
+                  Paid
+                </span>
+                <span v-else class="text-sm text-gray-500">No valid payees available</span>
+              </div>
               <button
                 @click="navigateToProjectDetail(project.id)"
-                class="inline-flex items-center px-3 py-1 bg-gray-600 text-white rounded-md text-sm hover:bg-gray-700"
+                class="px-3 py-1 bg-gray-600 text-white rounded-md text-sm hover:bg-gray-700"
               >
                 View Details
               </button>
@@ -612,69 +710,57 @@ const showToast = (message: string, type: "success" | "error") => {
         v-if="showUpdateModal"
         class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50"
       >
-        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <div class="bg-white rounded-md p-6 w-full max-w-md">
           <h2 class="text-lg font-medium text-gray-900 mb-4">Update Project</h2>
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Name</label
-              >
+              <label class="block text-sm font-medium text-gray-700">Name</label>
               <input
                 v-model="updateForm.name"
                 type="text"
                 required
-                class="mt-1 w-full h-10 rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                class="mt-1 w-full h-10 rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Description</label
-              >
+              <label class="block text-sm font-medium text-gray-700">Description</label>
               <textarea
                 v-model="updateForm.description"
                 rows="3"
-                class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-              ></textarea>
+                class="mt-1 w-full rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Location</label
-              >
+              <label class="block text-sm font-medium text-gray-700">Location</label>
               <input
                 v-model="updateForm.location"
                 type="text"
                 required
-                class="mt-1 w-full h-10 rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                class="mt-1 w-full h-10 rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Start Date</label
-              >
+              <label class="block text-sm font-medium text-gray-700">Start Date</label>
               <input
                 v-model="updateForm.startDate"
                 type="date"
                 required
-                class="mt-1 w-full h-10 rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                class="mt-1 w-full h-10 rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >End Date</label
-              >
+              <label class="block text-sm font-medium text-gray-700">End Date</label>
               <input
                 v-model="updateForm.endDate"
                 type="date"
-                class="mt-1 w-full h-10 rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                class="mt-1 w-full h-10 rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Status</label
-              >
+              <label class="block text-sm font-medium text-gray-700">Status</label>
               <select
                 v-model="updateForm.status"
-                class="mt-1 w-full h-10 rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                class="mt-1 w-full h-10 rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="planned">Planned</option>
                 <option value="in_progress">In Progress</option>
@@ -683,20 +769,19 @@ const showToast = (message: string, type: "success" | "error") => {
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
-            <div class="flex justify-end space-x-4">
+            <div class="flex justify-end space-x-2">
               <button
                 type="button"
                 @click="showUpdateModal = false"
-                class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
+                class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-700 hover:text-white"
               >
                 Cancel
               </button>
               <button
-                type="button"
                 @click="updateProject"
-                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
               >
-                Save
+                Update
               </button>
             </div>
           </div>
@@ -706,44 +791,38 @@ const showToast = (message: string, type: "success" | "error") => {
       <!-- Assign Site Engineer Modal -->
       <div
         v-if="showAssignModal"
-        class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50"
+        class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-100"
       >
-        <div class="bg-white rounded-lg p-6 w-full max-w-md">
-          <h2 class="text-lg font-medium text-gray-900 mb-6">
-            Assign Site Engineer
-          </h2>
+        <div class="bg-white rounded-md p-6 w-full max-w-md">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Assign Site Engineer</h3>
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Select Site Engineer</label
-              >
+              <label class="block text-sm font-medium text-gray-700">Select Site Engineer</label>
               <select
                 v-model="selectedSiteEngineer"
-                required
-                class="mt-1 w-full h-10 rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                class="mt-1 w-full h-10 rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option :value="null" disabled>Select a site engineer</option>
+                <option value="null" disabled selected>Select a site engineer</option>
                 <option
-                  v-for="engineer in siteEngineers"
-                  :key="engineer.id"
-                  :value="engineer.id"
+                  v-for="siteEngineer in siteEngineers"
+                  :key="siteEngineer.id"
+                  :value="siteEngineer.id"
                 >
-                  {{ engineer.firstName }} {{ engineer.lastName }}
+                  {{ siteEngineer.firstName }} {{ siteEngineer.lastName }}
                 </option>
               </select>
             </div>
-            <div class="flex justify-end space-x-4">
+            <div class="flex justify-end space-x-2">
               <button
                 type="button"
                 @click="showAssignModal = false"
-                class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
+                class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-700 hover:text-white"
               >
                 Cancel
               </button>
               <button
-                type="button"
                 @click="assignSiteEngineer"
-                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
               >
                 Assign
               </button>
@@ -752,105 +831,114 @@ const showToast = (message: string, type: "success" | "error") => {
         </div>
       </div>
 
+      <!-- Payment Modal -->
+      <div
+        v-if="showPaymentModal && selectedProject && selectedPayeeId"
+        class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-800"
+      >
+        <div class="bg-white rounded-md p-6 w-full max-w-md">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment</h3>
+          <PaymentForm
+            :project-id="selectedProject.id"
+            :payee-id="selectedPayeeId"
+            @payment-success="handlePaymentSuccess"
+            @payment-error="handlePaymentError"
+            @close="showPaymentModal = false"
+          />
+        </div>
+      </div>
+
       <!-- Project Detail Modal -->
       <div
-        v-if="showDetailModal"
+        v-if="showDetailModal && projectDetail"
         class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50"
       >
-        <div class="bg-white rounded-lg p-6 w-full max-w-lg">
-          <h2 class="text-lg font-medium text-gray-900 mb-4">
-            Project Details
-          </h2>
-          <div v-if="projectDetail" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700">ID</label>
-              <p class="mt-1 text-sm text-gray-900">{{ projectDetail.id }}</p>
+        <div class="bg-white rounded-md p-8 w-full max-w-md">
+          <h3 class="text-lg font-semibold text-gray-900 mb-6">Project Details</h3>
+          <div class="space-y-0">
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">ID</label>
+              <p class="text-sm text-gray-900">{{ projectDetail.id }}</p>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Name</label
-              >
-              <p class="mt-1 text-sm text-gray-900">{{ projectDetail.name }}</p>
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+              <p class="text-sm text-gray-900">{{ projectDetail.name }}</p>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Description</label
-              >
-              <p class="mt-1 text-sm text-gray-900">
-                {{ projectDetail.description }}
-              </p>
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <p class="text-sm text-gray-600">{{ projectDetail.description || "No description" }}</p>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Location</label
-              >
-              <p class="mt-1 text-sm text-gray-900">
-                {{ projectDetail.location }}
-              </p>
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+              <p class="text-sm text-gray-600">{{ projectDetail.location || "No location" }}</p>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Start Date</label
-              >
-              <p class="mt-1 text-sm text-gray-900">
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <p class="text-sm text-gray-600">
                 {{ new Date(projectDetail.startDate).toLocaleDateString() }}
               </p>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >End Date</label
-              >
-              <p class="mt-1 text-sm text-gray-900">
-                {{
-                  projectDetail.endDate
-                    ? new Date(projectDetail.endDate).toLocaleDateString()
-                    : "N/A"
-                }}
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+              <p class="text-sm text-gray-600">
+                {{ projectDetail.endDate ? new Date(projectDetail.endDate).toLocaleDateString() : "N/A" }}
               </p>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Status</label
-              >
-              <p class="mt-1 text-sm text-gray-900">
-                {{ projectDetail.status }}
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <p class="text-sm text-gray-600">{{ projectDetail.status }}</p>
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Client ID</label>
+              <p class="text-sm text-gray-600">{{ projectDetail.client?.id || "N/A" }}</p>
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Contractors</label>
+              <p class="text-sm text-gray-600">
+                {{ projectDetail.contractors?.map((c) => c.id).join(", ") || "None" }}
               </p>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Client ID</label
-              >
-              <p class="mt-1 text-sm text-gray-900">
-                {{ projectDetail.client?.id || "N/A" }}
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Site Engineers</label>
+              <p class="text-sm text-gray-600">
+                {{ projectDetail.siteEngineers?.map((e) => e.id).join(", ") || "None" }}
               </p>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Contractors</label
+            <div v-if="canShowPaymentButton(projectDetail)">
+              <select
+                v-if="getPayeeOptions(projectDetail).length > 1"
+                @change="handlePayeeChange"
+                class="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
               >
-              <p class="mt-1 text-sm text-gray-900">
-                {{
-                  projectDetail.contractors?.map((c) => c.id).join(", ") ||
-                  "None"
-                }}
-              </p>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700"
-                >Site Engineers</label
-              >
-              <p class="mt-1 text-sm text-gray-900">
-                {{
-                  projectDetail.siteEngineers?.map((e) => e.id).join(", ") ||
-                  "N/A"
-                }}
-              </p>
-            </div>
-            <div class="flex justify-end">
+                <option value="" disabled selected>Select Payee</option>
+                <option
+                  v-for="payee in getPayeeOptions(projectDetail)"
+                  :key="payee.id"
+                  :value="payee.id"
+                  :disabled="isPayeePaid(projectDetail.id, payee.id)"
+                >
+                  Payee ID: {{ payee.id }} {{ isPayeePaid(projectDetail.id, payee.id) ? "(Paid)" : "" }}
+                </option>
+              </select>
               <button
-                type="button"
+                v-else-if="getPayeeOptions(projectDetail).length === 1 && !isPayeePaid(projectDetail.id, getPayeeOptions(projectDetail)[0].id)"
+                @click="openPaymentModal(projectDetail, getPayeeOptions(projectDetail)[0].id)"
+                class="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
+              >
+                Pay
+              </button>
+              <span
+                v-else-if="getPayeeOptions(projectDetail).length === 1 && isPayeePaid(projectDetail.id, getPayeeOptions(projectDetail)[0].id)"
+                class="px-3 py-1 bg-green-100 text-green-800 rounded-md text-sm"
+              >
+                Paid
+              </span>
+              <span v-else class="text-sm text-gray-600">No valid payees available</span>
+            </div>
+            <div class="flex justify-end mt-4">
+              <button
                 @click="showDetailModal = false"
-                class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
+                class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-700 hover:text-white"
               >
                 Close
               </button>

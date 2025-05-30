@@ -33,6 +33,8 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.warn(`No token found for request to ${config.url}`);
     }
     return config;
   },
@@ -49,8 +51,10 @@ apiClient.interceptors.response.use(
   (error) => {
     // Handle 401 Unauthorized errors
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem("token");
-      // Redirect to login page if needed
+      console.error(`401 Unauthorized for ${error.config.url}:`, error.response.data);
+      // Do not remove token immediately; let the component decide
+      // Optionally log additional details
+      console.log("Request headers:", error.config.headers);
     }
     return Promise.reject(error);
   }
@@ -95,10 +99,20 @@ export const projectService = {
       `/projects/${projectId}/assign-site-engineer/${siteEngineerId}`
     );
   },
-  createPaymentIntent: (projectId: number, data: any) =>
-    apiClient.post(`/payments/create/${projectId}`, data),
-  getPaymentStatus: (paymentIntentId: string) =>
-    apiClient.get(`/payments/status/${paymentIntentId}`),
+
+  async createPayment(data: {
+    amount: number;
+    currency: string;
+    payeeId: number;
+    projectId: number;
+    description: string;
+  }) {
+    return await apiClient.post("/payments", data);
+  },
+
+  async confirmPayment(data: { paymentIntentId: string }) {
+    return await apiClient.post("/payments/confirm", data);
+  },
 };
 
 // Task service
@@ -148,7 +162,6 @@ export const materialService = {
 };
 
 // Document service
-
 export const documentService = {
   async getDocuments(projectId: string) {
     return await apiClient.get(`/projects/${projectId}/documents`);

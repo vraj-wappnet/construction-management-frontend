@@ -30,6 +30,7 @@ import CreateMaterial from "../views/materials/CreateMaterial.vue";
 import MaterialDetail from "../views/materials/MaterialDetail.vue";
 import Materials from "../views/materials/Materials.vue";
 import Documents from "../views/documents/Documents.vue";
+import VerifyOtp from "../views/auth/VerifyOtp.vue";
 
 // Define routes
 const routes: RouteRecordRaw[] = [
@@ -64,6 +65,12 @@ const routes: RouteRecordRaw[] = [
     path: "/reset-password",
     name: "ResetPassword",
     component: ResetPassword,
+    meta: { requiresAuth: false, layout: "auth" },
+  },
+  {
+    path: "/verify-otp",
+    name: "verify-otp",
+    component: VerifyOtp,
     meta: { requiresAuth: false, layout: "auth" },
   },
 
@@ -178,7 +185,7 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
 });
-347414
+347414;
 
 // Navigation guard
 router.beforeEach((to, from, next) => {

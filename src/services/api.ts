@@ -95,6 +95,10 @@ export const projectService = {
       `/projects/${projectId}/assign-site-engineer/${siteEngineerId}`
     );
   },
+  createPaymentIntent: (projectId: number, data: any) =>
+    apiClient.post(`/payments/create/${projectId}`, data),
+  getPaymentStatus: (paymentIntentId: string) =>
+    apiClient.get(`/payments/status/${paymentIntentId}`),
 };
 
 // Task service
@@ -208,7 +212,7 @@ export const profileService = {
   getUserProfile() {
     return apiClient.get("/users/me");
   },
- async updateProfile(data: any) {
+  async updateProfile(data: any) {
     return await apiClient.patch("/users/me", data, {
       headers: {
         "Content-Type": "multipart/form-data",

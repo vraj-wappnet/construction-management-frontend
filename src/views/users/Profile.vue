@@ -56,7 +56,10 @@ const fetchProfile = async () => {
     console.log("Profile fetched:", profile.value);
   } catch (err: unknown) {
     const apiError = err as ApiError;
-    showToast(apiError.response?.data?.message || "Failed to load profile", "error");
+    showToast(
+      apiError.response?.data?.message || "Failed to load profile",
+      "error"
+    );
   } finally {
     loading.value = false;
   }
@@ -87,9 +90,12 @@ const updateProfile = async () => {
     formData.append("email", editForm.value.email);
     if (editForm.value.profilePicture) {
       formData.append("profilePicture", editForm.value.profilePicture);
-      console.log('Uploading profile picture:', editForm.value.profilePicture.name);
+      console.log(
+        "Uploading profile picture:",
+        editForm.value.profilePicture.name
+      );
     } else {
-      console.log('No profile picture selected for upload');
+      console.log("No profile picture selected for upload");
     }
 
     await profileService.updateProfile(formData);
@@ -98,8 +104,11 @@ const updateProfile = async () => {
     showToast("Profile updated successfully", "success");
   } catch (err: unknown) {
     const apiError = err as ApiError;
-    console.error('Update profile error:', apiError);
-    showToast(apiError.response?.data?.message || "Failed to update profile", "error");
+    console.error("Update profile error:", apiError);
+    showToast(
+      apiError.response?.data?.message || "Failed to update profile",
+      "error"
+    );
   } finally {
     isUpdating.value = false;
   }
@@ -135,7 +144,9 @@ onMounted(fetchProfile);
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+  <div
+    class="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50"
+  >
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12 max-w-7xl">
       <!-- Toast Notification -->
       <Transition
@@ -150,7 +161,9 @@ onMounted(fetchProfile);
           v-if="toast.visible"
           :class="[
             'fixed bottom-6 right-6 z-50 px-6 py-4 rounded-xl shadow-2xl max-w-sm',
-            toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            toast.type === 'success'
+              ? 'bg-green-500 text-white'
+              : 'bg-red-500 text-white',
           ]"
         >
           <div class="flex items-center">
@@ -180,12 +193,18 @@ onMounted(fetchProfile);
         </div>
       </Transition>
 
-
       <!-- Loading State -->
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+      <div
+        v-if="loading"
+        class="flex flex-col items-center justify-center py-20"
+      >
         <div class="relative">
-          <div class="w-16 h-16 border-4 border-indigo-200 rounded-full animate-spin border-t-indigo-600"></div>
-          <div class="absolute inset-0 w-16 h-16 border-4 border-transparent rounded-full animate-ping border-t-indigo-400"></div>
+          <div
+            class="w-16 h-16 border-4 border-indigo-200 rounded-full animate-spin border-t-indigo-600"
+          ></div>
+          <div
+            class="absolute inset-0 w-16 h-16 border-4 border-transparent rounded-full animate-ping border-t-indigo-400"
+          ></div>
         </div>
         <p class="mt-4 text-gray-600 font-medium text-lg">Loading profile...</p>
       </div>
@@ -195,9 +214,21 @@ onMounted(fetchProfile);
         v-else-if="!profile"
         class="bg-white rounded-xl shadow-lg p-8 text-center max-w-lg mx-auto"
       >
-        <div class="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-          <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        <div
+          class="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center"
+        >
+          <svg
+            class="w-8 h-8 text-red-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
         </div>
         <p class="text-red-600 font-medium">Unable to load profile.</p>
@@ -208,7 +239,9 @@ onMounted(fetchProfile);
         v-else
         class="bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg max-w-lg mx-auto overflow-hidden transition-all duration-300 hover:shadow-xl border border-gray-100"
       >
-        <div class="bg-gradient-to-r from-indigo-500 to-blue-600 p-6 flex items-center space-x-4">
+        <div
+          class="bg-gradient-to-r from-indigo-500 to-blue-600 p-6 flex items-center space-x-4"
+        >
           <div class="relative">
             <img
               v-if="profile.profilePicture"
@@ -220,32 +253,45 @@ onMounted(fetchProfile);
               v-else
               class="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-semibold text-xl"
             >
-              {{ profile.firstName[0] }}{{ profile.lastName ? profile.lastName[0] : '' }}
+              {{ profile.firstName[0]
+              }}{{ profile.lastName ? profile.lastName[0] : "" }}
             </div>
           </div>
           <div>
             <h2 class="text-xl font-semibold text-white">
-              {{ profile.firstName }} {{ profile.lastName || '' }}
+              {{ profile.firstName }} {{ profile.lastName || "" }}
             </h2>
             <p class="text-sm text-indigo-100 mt-1">{{ profile.email }}</p>
           </div>
         </div>
         <div class="p-6 space-y-6">
           <div>
-            <label class="block text-sm font-medium text-gray-700">First Name</label>
-            <p class="mt-2 text-base text-gray-900 font-medium">{{ profile.firstName }}</p>
+            <label class="block text-sm font-medium text-gray-700"
+              >First Name</label
+            >
+            <p class="mt-2 text-base text-gray-900 font-medium">
+              {{ profile.firstName }}
+            </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Last Name</label>
-            <p class="mt-2 text-base text-gray-900 font-medium">{{ profile.lastName || "N/A" }}</p>
+            <label class="block text-sm font-medium text-gray-700"
+              >Last Name</label
+            >
+            <p class="mt-2 text-base text-gray-900 font-medium">
+              {{ profile.lastName || "N/A" }}
+            </p>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Email</label>
-            <p class="mt-2 text-base text-gray-900 font-medium">{{ profile.email }}</p>
+            <p class="mt-2 text-base text-gray-900 font-medium">
+              {{ profile.email }}
+            </p>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Role</label>
-            <p class="mt-2 text-base text-gray-900 font-medium">{{ profile.role }}</p>
+            <p class="mt-2 text-base text-gray-900 font-medium">
+              {{ profile.role }}
+            </p>
           </div>
           <div class="flex justify-end">
             <button
@@ -274,10 +320,14 @@ onMounted(fetchProfile);
           <div
             class="bg-white/90 backdrop-blur-lg rounded-2xl p-8 w-full max-w-md border border-gray-100 shadow-xl"
           >
-            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-6">Edit Profile</h2>
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-6">
+              Edit Profile
+            </h2>
             <form @submit.prevent="updateProfile" class="space-y-6">
               <div>
-                <label class="block text-sm font-semibold text-gray-700">First Name</label>
+                <label class="block text-sm font-semibold text-gray-700"
+                  >First Name</label
+                >
                 <input
                   v-model="editForm.firstName"
                   type="text"
@@ -286,7 +336,9 @@ onMounted(fetchProfile);
                 />
               </div>
               <div>
-                <label class="block text-sm font-semibold text-gray-700">Last Name</label>
+                <label class="block text-sm font-semibold text-gray-700"
+                  >Last Name</label
+                >
                 <input
                   v-model="editForm.lastName"
                   type="text"
@@ -294,7 +346,9 @@ onMounted(fetchProfile);
                 />
               </div>
               <div>
-                <label class="block text-sm font-semibold text-gray-700">Email</label>
+                <label class="block text-sm font-semibold text-gray-700"
+                  >Email</label
+                >
                 <input
                   v-model="editForm.email"
                   type="email"
@@ -303,7 +357,9 @@ onMounted(fetchProfile);
                 />
               </div>
               <div>
-                <label class="block text-sm font-semibold text-gray-700">Profile Picture</label>
+                <label class="block text-sm font-semibold text-gray-700"
+                  >Profile Picture</label
+                >
                 <div class="relative mt-2">
                   <input
                     type="file"
@@ -311,11 +367,26 @@ onMounted(fetchProfile);
                     @change="handleFileChange"
                     class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white/50 backdrop-blur-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-all duration-300"
                   />
-                  <div v-if="editForm.profilePicture" class="mt-2 text-sm text-gray-600 flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                  <div
+                    v-if="editForm.profilePicture"
+                    class="mt-2 text-sm text-gray-600 flex items-center"
+                  >
+                    <svg
+                      class="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
                     </svg>
-                    {{ editForm.profilePicture.name }} ({{ getFileSize(editForm.profilePicture) }})
+                    {{ editForm.profilePicture.name }} ({{
+                      getFileSize(editForm.profilePicture)
+                    }})
                   </div>
                 </div>
               </div>
@@ -367,9 +438,15 @@ onMounted(fetchProfile);
 <style scoped>
 /* Custom animations for smoother transitions */
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .group:hover .pulse {
@@ -377,7 +454,9 @@ onMounted(fetchProfile);
 }
 
 /* Ensure inputs have consistent focus states */
-input:focus, select:focus, textarea:focus {
+input:focus,
+select:focus,
+textarea:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }

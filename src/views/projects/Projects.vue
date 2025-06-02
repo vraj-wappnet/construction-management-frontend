@@ -655,7 +655,7 @@ const showToast = (message: string, type: "success" | "error") => {
               <button
                 v-if="
                   userRole === 'contractor' &&
-                  project.contractors?.some((c: { id: number }) => c.id === userId) &&
+                  project.contractor?.some((c: { id: number }) => c.id === userId) &&
                   project.siteEngineers?.length
                 "
                 class="px-3 py-1 bg-blue-100 text-blue-600 rounded-md text-sm"

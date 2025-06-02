@@ -145,7 +145,6 @@ const fetchTask = async () => {
       assignedToIds: apiTask.assignedTo.map((user) => user.id),
       dependencyIds: apiTask.dependencies.map((dep) => dep.id),
     };
-
     // Safely assign updateForm
     try {
       updateForm.value = {

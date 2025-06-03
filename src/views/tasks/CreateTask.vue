@@ -223,7 +223,7 @@ fetchTasks();
             </option>
           </select>
         </div>
-        <div>
+        <!-- <div>
           <label class="block text-sm font-medium text-gray-700">Dependencies</label>
           <select
             v-model="taskForm.dependencyIds"
@@ -234,7 +234,7 @@ fetchTasks();
               {{ task.name }}
             </option>
           </select>
-        </div>
+        </div> -->
         <div class="flex justify-end space-x-4">
           <button
             type="button"

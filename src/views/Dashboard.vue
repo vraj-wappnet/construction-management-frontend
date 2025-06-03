@@ -82,13 +82,7 @@ const dashboardStats = ref([
     color: "green",
     link: "/materials",
   },
-  {
-    title: "Pending Invoices",
-    value: "$12",
-    icon: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z",
-    color: "red",
-    link: "/invoices",
-  },
+ 
 ]);
 </script>
 
@@ -542,7 +536,7 @@ const dashboardStats = ref([
                   </div>
 
                   <!-- Progress Section -->
-                  <div class="space-y-3">
+                  <!-- <div class="space-y-3">
                     <div class="flex items-center justify-between">
                       <span class="text-sm font-semibold text-slate-700"
                         >Progress</span
@@ -561,7 +555,7 @@ const dashboardStats = ref([
                         :style="`width: ${project.progress || 0}%`"
                       ></div>
                     </div>
-                  </div>
+                  </div> -->
 
                   <!-- Updated Info -->
                   <div

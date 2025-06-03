@@ -636,7 +636,6 @@ onMounted(fetchVendors);
           </div>
           <div class="flex items-center">
             <input
-              v-model="updateForm.isActive"
               type="checkbox"
               class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
             />

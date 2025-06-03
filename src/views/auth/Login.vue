@@ -1,44 +1,46 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/auth";
+import { useToastStore } from "../../stores/toast";
 
 const router = useRouter();
 const authStore = useAuthStore();
+const toastStore = useToastStore();
 
 const email = ref("");
 const password = ref("");
 const rememberMe = ref(false);
 const loading = ref(false);
-const errorMessage = ref("");
-
-// Watch for isAuthenticated changes to handle async state updates
-watch(
-  () => authStore.isAuthenticated,
-  (isAuthenticated) => {
-    if (isAuthenticated) {
-      router.push({ name: "Dashboard" });
-    }
-  }
-);
 
 const login = async () => {
+  toastStore.clearAll(); // Clear existing toasts to prevent stacking
   if (!email.value || !password.value) {
-    errorMessage.value = "Email and password are required";
+    toastStore.error("Email and password are required", 5000);
     return;
   }
 
   loading.value = true;
-  errorMessage.value = "";
+
   try {
     await authStore.login({
       email: email.value,
       password: password.value,
       rememberMe: rememberMe.value,
     });
-    // Redirect is handled by the watcher or authStore.login
+
+    if (!authStore.error) {
+      toastStore.success("Login successful!", 7000); // Longer duration for success
+      router.push({ name: "Dashboard" });
+    } else {
+      toastStore.error(authStore.error, 5000);
+    }
   } catch (error) {
-    errorMessage.value = authStore.error || "Login failed. Please try again.";
+    const errorMessage =
+      authStore.error ||
+      error.response?.data?.message ||
+      "Login failed. Please try again.";
+    toastStore.error(errorMessage, 5000);
     console.error("Login error:", error);
   } finally {
     loading.value = false;
@@ -47,38 +49,10 @@ const login = async () => {
 </script>
 
 <template>
-  <div>
+  <div class="max-w-md mx-auto">
     <h2 class="text-center text-2xl font-bold text-gray-700 mb-6">
       Sign in to your account
     </h2>
-
-    <div
-      v-if="errorMessage || authStore.error"
-      class="mb-4 bg-red-50 p-4 rounded-md"
-    >
-      <div class="flex">
-        <div class="flex-shrink-0">
-          <svg
-            class="h-5 w-5 text-red-400"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-              clip-rule="evenodd"
-            />
-          </svg>
-        </div>
-        <div class="ml-3">
-          <h3 class="text-sm font-medium text-red-800">
-            {{ errorMessage || authStore.error }}
-          </h3>
-        </div>
-      </div>
-    </div>
 
     <form class="space-y-6" @submit.prevent="login">
       <div>
@@ -116,15 +90,12 @@ const login = async () => {
       </div>
 
       <div class="flex items-center justify-between">
-       
-
         <div class="text-sm">
           <router-link
             to="/forgot-password"
             class="font-medium text-primary-600 hover:text-primary-500"
+            >Forgot your password?</router-link
           >
-            Forgot your password?
-          </router-link>
         </div>
       </div>
 

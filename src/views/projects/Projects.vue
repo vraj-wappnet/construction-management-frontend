@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from "vue";
-import PaymentForm from "./PaymentForm.vue";
-import { useAuthStore } from "../../stores/auth";
-import { projectService } from "../../services/api";
+import { ref, onMounted, computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import PaymentForm from './PaymentForm.vue';
+import { useAuthStore } from '../../stores/auth';
+import { projectService } from '../../services/api';
 
 interface Project {
   id: number;
@@ -34,7 +35,7 @@ interface Payment {
 
 interface Toast {
   message: string;
-  type: "success" | "error";
+  type: 'success' | 'error';
   visible: boolean;
 }
 
@@ -48,13 +49,14 @@ interface UpdateForm {
 }
 
 const authStore = useAuthStore();
+const route = useRoute();
 
 const projects = ref<Project[]>([]);
 const payments = ref<Payment[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
-const searchQuery = ref("");
-const statusFilter = ref("All");
+const searchQuery = ref('');
+const statusFilter = ref('All');
 const showUpdateModal = ref(false);
 const showAssignModal = ref(false);
 const showDetailModal = ref(false);
@@ -63,35 +65,35 @@ const selectedProject = ref<Project | null>(null);
 const projectDetail = ref<Project | null>(null);
 const selectedPayeeId = ref<number | null>(null);
 const updateForm = ref<UpdateForm>({
-  name: "",
-  description: "",
-  location: "",
-  startDate: "",
-  endDate: "",
-  status: "",
+  name: '',
+  description: '',
+  location: '',
+  startDate: '',
+  endDate: '',
+  status: '',
 });
 const siteEngineers = ref<SiteEngineer[]>([]);
 const selectedSiteEngineer = ref<number | null>(null);
 const toast = ref<Toast>({
-  message: "",
-  type: "success",
+  message: '',
+  type: 'success',
   visible: false,
 });
 
 const userRole = computed(() => authStore.userRole as string);
 const userId = computed(() => Number(authStore.user?.id) || 0);
 
-const canInitiatePayment = computed(() => ["client", "contractor"].includes(userRole.value));
-const canCreateProject = computed(() => ["admin", "client"].includes(userRole.value));
+const canInitiatePayment = computed(() => ['client', 'contractor'].includes(userRole.value));
+const canCreateProject = computed(() => ['admin', 'client'].includes(userRole.value));
 const canUpdateDelete = computed(() => {
-  const canUpdate = ["admin", "client"].includes(userRole.value);
-  console.log("canUpdateDelete:", { userRole: userRole.value, canUpdate });
+  const canUpdate = ['admin', 'client'].includes(userRole.value);
+  console.log('canUpdateDelete:', { userRole: userRole.value, canUpdate });
   return canUpdate;
 });
 
 // Debug payment modal conditions
 watch([showPaymentModal, selectedProject, selectedPayeeId], () => {
-  console.log("Payment modal state:", {
+  console.log('Payment modal state:', {
     showPaymentModal: showPaymentModal.value,
     selectedProjectId: selectedProject.value?.id,
     selectedPayeeId: selectedPayeeId.value,
@@ -99,18 +101,18 @@ watch([showPaymentModal, selectedProject, selectedPayeeId], () => {
 });
 
 onMounted(async () => {
-  console.log("Auth state:", {
+  console.log('Auth state:', {
     userRole: userRole.value,
     userId: userId.value,
     authStore: authStore.user,
   });
   if (!authStore.user?.id || !userRole.value) {
-    console.warn("Invalid auth state, redirecting to login");
-    showToast("Please log in to view projects", "error");
-    // window.location.href = "/login";
+    console.warn('Invalid auth state, redirecting to login');
+    showToast('Please log in to view projects', 'error');
+    // window.location.href = '/login';
   }
   await Promise.all([fetchProjects(), fetchPaymentHistory()]);
-  if (userRole.value === "contractor") {
+  if (userRole.value === 'contractor') {
     await fetchSiteEngineers();
   }
 });
@@ -119,28 +121,38 @@ const fetchProjects = async () => {
   try {
     loading.value = true;
     error.value = null;
-    console.log("Fetching projects for role:", userRole.value, "userId:", userId.value);
-    const response = await (userRole.value === "contractor"
-      ? projectService.getProjects()
-      : projectService.getMyProjects());
-    projects.value = Array.isArray(response.data)
-      ? response.data
-      : response.data?.projects || [];
+    console.log('Fetching projects for role:', userRole.value, 'userId:', userId.value, 'route:', route.path);
+    let response;
+    if (userRole.value === 'contractor' && route.path === '/projects/accepted') {
+      console.log('Fetching accepted projects for contractor');
+      response = await projectService.getProjects();
+      const data = Array.isArray(response.data) ? response.data : response.data?.projects || [];
+      projects.value = data.filter((project: Project) => project.acceptedByContractor === true);
+    } else {
+      response = await (userRole.value === 'contractor'
+        ? projectService.getProjects()
+        : projectService.getMyProjects());
+      projects.value = Array.isArray(response.data)
+        ? response.data
+        : response.data?.projects || [];
+    }
     projects.value = projects.value.map((project) => ({
       ...project,
       acceptedByContractor:
         project.acceptedByContractor ??
         (project.contractors?.some((c: { id: number }) => c.id === userId.value) &&
-          project.status !== "planned"),
+          project.status !== 'planned'),
     }));
-    console.log("Fetched projects:", projects.value);
+    console.log('Fetched projects:', projects.value);
     if (projects.value.length === 0) {
-      console.warn("No projects returned from API");
-      error.value = "No projects found. Please check your permissions or contact support.";
+      console.warn('No projects found');
+      error.value = route.path === '/projects/accepted'
+        ? 'No accepted projects found.'
+        : 'No projects found. Please check your permissions or contact support.';
     }
   } catch (err: any) {
-    error.value = err.response?.data?.message || "Failed to load projects";
-    console.error("Fetch Projects Error:", err);
+    error.value = err.response?.data?.message || 'Failed to load projects';
+    console.error('Fetch Projects Error:', err);
   } finally {
     loading.value = false;
   }
@@ -148,13 +160,13 @@ const fetchProjects = async () => {
 
 const fetchPaymentHistory = async () => {
   try {
-    console.log("Fetching payment history for user:", userId.value);
+    console.log('Fetching payment history for user:', userId.value);
     const response = await projectService.getPaymentHistory();
     payments.value = response.data;
-    console.log("Fetched payment history:", payments.value);
+    console.log('Fetched payment history:', payments.value);
   } catch (err: any) {
-    console.error("Fetch Payment History Error:", err);
-    showToast("Failed to load payment history", "error");
+    console.error('Fetch Payment History Error:', err);
+    showToast('Failed to load payment history', 'error');
   }
 };
 
@@ -166,12 +178,12 @@ const fetchProjectDetail = async (projectId: number) => {
       acceptedByContractor:
         response.data.acceptedByContractor ??
         (response.data.contractors?.some((c: { id: number }) => c.id === userId.value) &&
-          response.data.status !== "planned"),
+          response.data.status !== 'planned'),
     };
     showDetailModal.value = true;
   } catch (err: any) {
-    showToast(err.response?.data?.message || "Failed to load project details", "error");
-    console.error("Fetch Project Detail Error:", err);
+    showToast(err.response?.data?.message || 'Failed to load project details', 'error');
+    console.error('Fetch Project Detail Error:', err);
   }
 };
 
@@ -179,10 +191,10 @@ const fetchSiteEngineers = async () => {
   try {
     const response = await projectService.getSiteEngineers();
     siteEngineers.value = response.data;
-    console.log("Site Engineers:", siteEngineers.value);
+    console.log('Site Engineers:', siteEngineers.value);
   } catch (err: any) {
-    showToast("Failed to load site engineers", "error");
-    console.error("Fetch Site Engineers:", err);
+    showToast('Failed to load site engineers', 'error');
+    console.error('Fetch Site Engineers:', err);
   }
 };
 
@@ -200,27 +212,27 @@ const filteredProjects = computed(() => {
         p.location?.toLowerCase()?.includes(query)
     );
   }
-  if (statusFilter.value !== "All") {
+  if (statusFilter.value !== 'All') {
     filtered = filtered.filter((project) => project.status === statusFilter.value);
   }
-  console.log("Filtered projects:", filtered);
+  console.log('Filtered projects:', filtered);
   return filtered;
 });
 
 const getProjectStatusClass = (status: string) => {
   switch (status) {
-    case "planned":
-      return "bg-blue-100 text-blue-800";
-    case "in_progress":
-      return "bg-yellow-100 text-yellow-800";
-    case "completed":
-      return "bg-green-100 text-green-800";
-    case "delayed":
-      return "bg-red-100 text-red-800";
-    case "cancelled":
-      return "bg-gray-100 text-gray-800";
+    case 'planned':
+      return 'bg-blue-100 text-blue-800';
+    case 'in_progress':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'completed':
+      return 'bg-green-100 text-green-800';
+    case 'delayed':
+      return 'bg-red-100 text-red-800';
+    case 'cancelled':
+      return 'bg-gray-100 text-gray-800';
     default:
-      return "bg-gray-100 text-gray-800";
+      return 'bg-gray-100 text-gray-800';
   }
 };
 
@@ -230,8 +242,8 @@ const openUpdateModal = (project: Project) => {
     name: project.name,
     description: project.description,
     location: project.location,
-    startDate: project.startDate.split("T")[0],
-    endDate: project.endDate ? project.endDate.split("T")[0] : "",
+    startDate: project.startDate.split('T')[0],
+    endDate: project.endDate ? project.endDate.split('T')[0] : '',
     status: project.status,
   };
   showUpdateModal.value = true;
@@ -244,26 +256,26 @@ const updateProject = async () => {
       updateForm.value.endDate &&
       new Date(updateForm.value.endDate) < new Date(updateForm.value.startDate)
     ) {
-      showToast("End date cannot be earlier than start date", "error");
+      showToast('End date cannot be earlier than start date', 'error');
       return;
     }
     await projectService.updateProject(selectedProject.value.id, updateForm.value);
     await fetchProjects();
     showUpdateModal.value = false;
-    showToast("Project updated successfully", "success");
+    showToast('Project updated successfully', 'success');
   } catch (err: any) {
-    showToast(err.response?.data?.message || "Failed to update project", "error");
+    showToast(err.response?.data?.message || 'Failed to update project', 'error');
   }
 };
 
 const deleteProject = async (projectId: number) => {
-  if (!confirm("Are you sure you want to delete this project?")) return;
+  if (!confirm('Are you sure you want to delete this project?')) return;
   try {
     await projectService.deleteProject(projectId);
     await fetchProjects();
-    showToast("Project deleted successfully", "success");
+    showToast('Project deleted successfully', 'success');
   } catch (err: any) {
-    showToast(err.response?.data?.message || "Failed to delete project", "error");
+    showToast(err.response?.data?.message || 'Failed to delete project', 'error');
   }
 };
 
@@ -281,10 +293,10 @@ const acceptProject = async (projectId: number) => {
           }
         : project
     );
-    showToast("Project accepted successfully", "success");
+    showToast('Project accepted successfully', 'success');
     await fetchProjects();
   } catch (err: any) {
-    showToast(err.response?.data?.message || "Failed to accept project", "error");
+    showToast(err.response?.data?.message || 'Failed to accept project', 'error');
   }
 };
 
@@ -303,19 +315,19 @@ const assignSiteEngineer = async () => {
     );
     await fetchProjects();
     showAssignModal.value = false;
-    showToast("Site engineer assigned successfully", "success");
+    showToast('Site engineer assigned successfully', 'success');
   } catch (err: any) {
-    showToast(err.response?.data?.message || "Failed to assign site engineer", "error");
+    showToast(err.response?.data?.message || 'Failed to assign site engineer', 'error');
   }
 };
 
 const openPaymentModal = (project: Project, payeeId: number) => {
   if (!Number.isInteger(payeeId) || payeeId <= 0) {
-    console.error("Invalid payeeId:", payeeId);
-    showToast("Invalid payee selected", "error");
+    console.error('Invalid payeeId:', payeeId);
+    showToast('Invalid payee selected', 'error');
     return;
   }
-  console.log("Opening payment modal:", { projectId: project.id, payeeId });
+  console.log('Opening payment modal:', { projectId: project.id, payeeId });
   selectedProject.value = project;
   selectedPayeeId.value = payeeId;
   showPaymentModal.value = true;
@@ -325,10 +337,10 @@ const handlePayeeChange = (event: Event) => {
   const target = event.target as HTMLSelectElement;
   if (target && selectedProject.value) {
     const payeeId = Number(target.value);
-    console.log("Payee selected:", { payeeId });
+    console.log('Payee selected:', { payeeId });
     if (isNaN(payeeId) || payeeId <= 0) {
-      console.error("Invalid payeeId from dropdown:", target.value);
-      showToast("Please select a valid payee", "error");
+      console.error('Invalid payeeId from dropdown:', target.value);
+      showToast('Please select a valid payee', 'error');
       return;
     }
     openPaymentModal(selectedProject.value, payeeId);
@@ -336,8 +348,8 @@ const handlePayeeChange = (event: Event) => {
 };
 
 const handlePaymentSuccess = async () => {
-  console.log("Payment success handled for project:", selectedProject.value?.id, "payee:", selectedPayeeId.value);
-  showToast("Payment processed successfully", "success");
+  console.log('Payment success handled for project:', selectedProject.value?.id, 'payee:', selectedPayeeId.value);
+  showToast('Payment processed successfully', 'success');
   showPaymentModal.value = false;
   selectedProject.value = null;
   selectedPayeeId.value = null;
@@ -345,15 +357,15 @@ const handlePaymentSuccess = async () => {
 };
 
 const handlePaymentError = (message: string) => {
-  console.error("Payment error handled:", message);
-  showToast(message || "Failed to process payment", "error");
+  console.error('Payment error handled:', message);
+  showToast(message || 'Failed to process payment', 'error');
   showPaymentModal.value = false;
   selectedProject.value = null;
   selectedPayeeId.value = null;
 };
 
 const canShowPaymentButton = (project: Project) => {
-  console.log("canShowPaymentButton:", {
+  console.log('canShowPaymentButton:', {
     projectId: project.id,
     userRole: userRole.value,
     userId: userId.value,
@@ -363,15 +375,15 @@ const canShowPaymentButton = (project: Project) => {
     status: project.status,
   });
   if (!canInitiatePayment.value) return false;
-  if (userRole.value === "client") {
+  if (userRole.value === 'client') {
     const hasContractors = (project.contractors?.length ?? 0) > 0;
-    console.log("Client check:", { inProgress: project.status === "in_progress", hasContractors });
-    return project.status === "in_progress" && hasContractors;
+    console.log('Client check:', { inProgress: project.status === 'in_progress', hasContractors });
+    return project.status === 'in_progress' && hasContractors;
   }
-  if (userRole.value === "contractor") {
+  if (userRole.value === 'contractor') {
     const isAssigned = project.contractors?.some((c: { id: number }) => c.id === userId.value);
     const hasSiteEngineers = (project.siteEngineers?.length ?? 0) > 0;
-    console.log("Contractor check:", { isAssigned, hasSiteEngineers });
+    console.log('Contractor check:', { isAssigned, hasSiteEngineers });
     return isAssigned && hasSiteEngineers;
   }
   return false;
@@ -382,28 +394,28 @@ const isPayeePaid = (projectId: number, payeeId: number) => {
     (payment) =>
       payment.project.id === projectId &&
       payment.payee.id === payeeId &&
-      payment.status === "succeeded"
+      payment.status === 'succeeded'
   );
-  console.log("isPayeePaid:", { projectId, payeeId, paid });
+  console.log('isPayeePaid:', { projectId, payeeId, paid });
   return paid;
 };
 
 const getPayeeOptions = (project: Project) => {
-  const options = userRole.value === "client"
+  const options = userRole.value === 'client'
     ? project.contractors || []
-    : userRole.value === "contractor"
+    : userRole.value === 'contractor'
     ? project.siteEngineers || []
     : [];
-  console.log("getPayeeOptions:", {
+  console.log('getPayeeOptions:', {
     projectId: project.id,
     options,
-    valid: options.every(payee => typeof payee.id === "number" && payee.id > 0),
+    valid: options.every(payee => typeof payee.id === 'number' && payee.id > 0),
   });
-  return options.filter(payee => typeof payee.id === "number" && payee.id > 0);
+  return options.filter(payee => typeof payee.id === 'number' && payee.id > 0);
 };
 
-const showToast = (message: string, type: "success" | "error") => {
-  console.log("Showing toast:", { message, type });
+const showToast = (message: string, type: 'success' | 'error') => {
+  console.log('Showing toast:', { message, type });
   toast.value = { message, type, visible: true };
   setTimeout(() => (toast.value.visible = false), 3000);
 };
@@ -581,7 +593,7 @@ const showToast = (message: string, type: "success" | "error") => {
               <div class="flex-1 truncate">
                 <div class="flex items-center space-x-3">
                   <h3 class="text-sm font-medium text-gray-900 truncate">
-                    {{ project.name || "Unnamed Project" }}
+                    {{ project.name || 'Unnamed Project' }}
                   </h3>
                   <span
                     :class="[
@@ -589,11 +601,11 @@ const showToast = (message: string, type: "success" | "error") => {
                       'px-2 py-1 text-xs rounded-full',
                     ]"
                   >
-                    {{ project.status || "Unknown" }}
+                    {{ project.status || 'Unknown' }}
                   </span>
                 </div>
                 <p class="mt-1 text-sm text-gray-500 truncate">
-                  {{ project.location || "No location specified" }}
+                  {{ project.location || 'No location specified' }}
                 </p>
               </div>
             </div>
@@ -601,13 +613,13 @@ const showToast = (message: string, type: "success" | "error") => {
               <div>
                 <p class="text-xs font-medium text-gray-500">Start Date</p>
                 <p class="text-sm text-gray-900">
-                  {{ project.startDate ? new Date(project.startDate).toLocaleDateString() : "N/A" }}
+                  {{ project.startDate ? new Date(project.startDate).toLocaleDateString() : 'N/A' }}
                 </p>
               </div>
               <div>
                 <p class="text-xs font-medium text-gray-500">End Date</p>
                 <p class="text-sm text-gray-900">
-                  {{ project.endDate ? new Date(project.endDate).toLocaleDateString() : "N/A" }}
+                  {{ project.endDate ? new Date(project.endDate).toLocaleDateString() : 'N/A' }}
                 </p>
               </div>
             </div>
@@ -655,7 +667,7 @@ const showToast = (message: string, type: "success" | "error") => {
               <button
                 v-if="
                   userRole === 'contractor' &&
-                  project.contractor?.some((c: { id: number }) => c.id === userId) &&
+                  project.contractors?.some((c: { id: number }) => c.id === userId) &&
                   project.siteEngineers?.length
                 "
                 class="px-3 py-1 bg-blue-100 text-blue-600 rounded-md text-sm"
@@ -676,7 +688,7 @@ const showToast = (message: string, type: "success" | "error") => {
                     :value="payee.id"
                     :disabled="isPayeePaid(project.id, payee.id)"
                   >
-                    Payee ID: {{ payee.id }} {{ isPayeePaid(project.id, payee.id) ? "(Paid)" : "" }}
+                    Payee ID: {{ payee.id }} {{ isPayeePaid(project.id, payee.id) ? '(Paid)' : '' }}
                   </option>
                 </select>
                 <button
@@ -686,6 +698,12 @@ const showToast = (message: string, type: "success" | "error") => {
                 >
                   Pay
                 </button>
+                <span
+                  v-else-if="getPayeeOptions(project).length >= 1 && getPayeeOptions(project).every(payee => isPayeePaid(project.id, payee.id))"
+                  class="px-3 py-1 bg-green-100 text-green-800 rounded-md text-sm"
+                >
+                  All Paid
+                </span>
                 <span
                   v-else-if="getPayeeOptions(project).length === 1 && isPayeePaid(project.id, getPayeeOptions(project)[0].id)"
                   class="px-3 py-1 bg-green-100 text-green-800 rounded-md text-sm"
@@ -773,13 +791,13 @@ const showToast = (message: string, type: "success" | "error") => {
               <button
                 type="button"
                 @click="showUpdateModal = false"
-                class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-700 hover:text-white"
+                class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
               >
                 Cancel
               </button>
               <button
                 @click="updateProject"
-                class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
                 Update
               </button>
@@ -791,7 +809,7 @@ const showToast = (message: string, type: "success" | "error") => {
       <!-- Assign Site Engineer Modal -->
       <div
         v-if="showAssignModal"
-        class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-100"
+        class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50"
       >
         <div class="bg-white rounded-md p-6 w-full max-w-md">
           <h3 class="text-lg font-medium text-gray-900 mb-4">Assign Site Engineer</h3>
@@ -816,13 +834,13 @@ const showToast = (message: string, type: "success" | "error") => {
               <button
                 type="button"
                 @click="showAssignModal = false"
-                class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-700 hover:text-white"
+                class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
               >
                 Cancel
               </button>
               <button
                 @click="assignSiteEngineer"
-                class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
                 Assign
               </button>
@@ -834,7 +852,7 @@ const showToast = (message: string, type: "success" | "error") => {
       <!-- Payment Modal -->
       <div
         v-if="showPaymentModal && selectedProject && selectedPayeeId"
-        class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-800"
+        class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50"
       >
         <div class="bg-white rounded-md p-6 w-full max-w-md">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment</h3>
@@ -855,60 +873,60 @@ const showToast = (message: string, type: "success" | "error") => {
       >
         <div class="bg-white rounded-md p-8 w-full max-w-md">
           <h3 class="text-lg font-semibold text-gray-900 mb-6">Project Details</h3>
-          <div class="space-y-0">
-            <div class="mb-4">
+          <div class="space-y-4">
+            <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">ID</label>
               <p class="text-sm text-gray-900">{{ projectDetail.id }}</p>
             </div>
-            <div class="mb-4">
+            <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
               <p class="text-sm text-gray-900">{{ projectDetail.name }}</p>
             </div>
-            <div class="mb-4">
+            <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <p class="text-sm text-gray-600">{{ projectDetail.description || "No description" }}</p>
+              <p class="text-sm text-gray-600">{{ projectDetail.description || 'No description' }}</p>
             </div>
-            <div class="mb-4">
+            <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
-              <p class="text-sm text-gray-600">{{ projectDetail.location || "No location" }}</p>
+              <p class="text-sm text-gray-600">{{ projectDetail.location || 'No location' }}</p>
             </div>
-            <div class="mb-4">
+            <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
               <p class="text-sm text-gray-600">
                 {{ new Date(projectDetail.startDate).toLocaleDateString() }}
               </p>
             </div>
-            <div class="mb-4">
+            <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
               <p class="text-sm text-gray-600">
-                {{ projectDetail.endDate ? new Date(projectDetail.endDate).toLocaleDateString() : "N/A" }}
+                {{ projectDetail.endDate ? new Date(projectDetail.endDate).toLocaleDateString() : 'N/A' }}
               </p>
             </div>
-            <div class="mb-4">
+            <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <p class="text-sm text-gray-600">{{ projectDetail.status }}</p>
             </div>
-            <div class="mb-4">
+            <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Client ID</label>
-              <p class="text-sm text-gray-600">{{ projectDetail.client?.id || "N/A" }}</p>
+              <p class="text-sm text-gray-600">{{ projectDetail.client?.id || 'N/A' }}</p>
             </div>
-            <div class="mb-4">
+            <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Contractors</label>
               <p class="text-sm text-gray-600">
-                {{ projectDetail.contractors?.map((c) => c.id).join(", ") || "None" }}
+                {{ projectDetail.contractors?.map((c) => c.id).join(', ') || 'None' }}
               </p>
             </div>
-            <div class="mb-4">
+            <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Site Engineers</label>
               <p class="text-sm text-gray-600">
-                {{ projectDetail.siteEngineers?.map((e) => e.id).join(", ") || "None" }}
+                {{ projectDetail.siteEngineers?.map((e) => e.id).join(', ') || 'None' }}
               </p>
             </div>
             <div v-if="canShowPaymentButton(projectDetail)">
               <select
                 v-if="getPayeeOptions(projectDetail).length > 1"
                 @change="handlePayeeChange"
-                class="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
+                class="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
               >
                 <option value="" disabled selected>Select Payee</option>
                 <option
@@ -917,16 +935,22 @@ const showToast = (message: string, type: "success" | "error") => {
                   :value="payee.id"
                   :disabled="isPayeePaid(projectDetail.id, payee.id)"
                 >
-                  Payee ID: {{ payee.id }} {{ isPayeePaid(projectDetail.id, payee.id) ? "(Paid)" : "" }}
+                  Payee ID: {{ payee.id }} {{ isPayeePaid(projectDetail.id, payee.id) ? '(Paid)' : '' }}
                 </option>
               </select>
               <button
                 v-else-if="getPayeeOptions(projectDetail).length === 1 && !isPayeePaid(projectDetail.id, getPayeeOptions(projectDetail)[0].id)"
                 @click="openPaymentModal(projectDetail, getPayeeOptions(projectDetail)[0].id)"
-                class="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
+                class="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
               >
                 Pay
               </button>
+              <span
+                v-else-if="getPayeeOptions(projectDetail).length >= 1 && getPayeeOptions(projectDetail).every(payee => isPayeePaid(projectDetail.id, payee.id))"
+                class="px-3 py-1 bg-green-100 text-green-800 rounded-md text-sm"
+              >
+                All Paid
+              </span>
               <span
                 v-else-if="getPayeeOptions(projectDetail).length === 1 && isPayeePaid(projectDetail.id, getPayeeOptions(projectDetail)[0].id)"
                 class="px-3 py-1 bg-green-100 text-green-800 rounded-md text-sm"
@@ -938,7 +962,7 @@ const showToast = (message: string, type: "success" | "error") => {
             <div class="flex justify-end mt-4">
               <button
                 @click="showDetailModal = false"
-                class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-700 hover:text-white"
+                class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
               >
                 Close
               </button>

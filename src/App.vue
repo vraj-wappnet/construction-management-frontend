@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { onMounted, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
@@ -7,6 +6,7 @@ import AppLayout from "./layouts/AppLayout.vue";
 import AuthLayout from "./layouts/AuthLayout.vue";
 import Home from "./Home.vue";
 import Navbar from "./components/Navbar.vue";
+import Toast from "./components/Toast.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -39,8 +39,14 @@ onMounted(async () => {
 <template>
   <div class="min-h-screen bg-gray-100">
     <!-- Loading state -->
-    <div v-if="isLoading" class="fixed inset-0 bg-gray-100 flex items-center justify-center z-50">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+
+    <div
+      v-if="isLoading"
+      class="fixed inset-0 bg-gray-100 flex items-center justify-center z-50"
+    >
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"
+      ></div>
     </div>
 
     <!-- Main content -->
@@ -53,6 +59,7 @@ onMounted(async () => {
       </div>
     </div>
   </div>
+  <Toast />
 </template>
 
 <style scoped>

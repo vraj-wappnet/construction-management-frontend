@@ -3,7 +3,10 @@ import { ref } from "vue";
 import { loadStripe } from "@stripe/stripe-js";
 import { StripeElements, StripeElement } from "vue-stripe-js";
 import { projectService } from "../../services/api";
-import type { StripeElementsOptionsMode, StripePaymentElementOptions } from "@stripe/stripe-js";
+import type {
+  StripeElementsOptionsMode,
+  StripePaymentElementOptions,
+} from "@stripe/stripe-js";
 
 interface Props {
   projectId: number;
@@ -19,10 +22,14 @@ const emit = defineEmits<{
 }>();
 
 console.log("Environment variables:", import.meta.env);
-const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as
+  | string
+  | undefined;
 console.log("Stripe key:", stripeKey);
 if (!stripeKey) {
-  throw new Error("Stripe publishable key is not defined in environment variables");
+  throw new Error(
+    "Stripe publishable key is not defined in environment variables"
+  );
 }
 
 const stripeOptions = ref({
@@ -139,7 +146,13 @@ async function handleSubmit() {
     }
     clientSecret.value = response.data.clientSecret;
     paymentId.value = response.data.paymentId;
-    elementsOptions.value.clientSecret = clientSecret.value;
+
+    // Ensure clientSecret.value is not null before assigning
+    if (clientSecret.value) {
+      // elementsOptions.value.clientSecret = clientSecret.value;
+    } else {
+      throw new Error("Client secret is null");
+    }
     elementsOptions.value.amount = amount.value;
 
     console.log("Submitting payment form elements");
@@ -161,22 +174,33 @@ async function handleSubmit() {
       throw new Error(stripeError.message || "Payment failed");
     }
 
-    console.log("Confirming payment with paymentIntentId:", clientSecret.value.split("_secret_")[0]);
+    console.log(
+      "Confirming payment with paymentIntentId:",
+      clientSecret.value.split("_secret_")[0]
+    );
     await projectService.confirmPayment({
       paymentIntentId: clientSecret.value.split("_secret_")[0],
     });
 
-    console.log("Payment successful for project:", props.projectId, "payee:", props.payeeId);
+    console.log(
+      "Payment successful for project:",
+      props.projectId,
+      "payee:",
+      props.payeeId
+    );
     emit("payment-success");
     emit("close");
   } catch (err: unknown) {
-    const apiError = err as { response?: { data?: { message?: string }; status?: number } };
+    const apiError = err as {
+      response?: { data?: { message?: string }; status?: number };
+    };
     console.error("Payment confirmation error:", apiError);
     if (apiError.response?.status === 401) {
       error.value = "Session expired. Please log in again.";
       showLoginPrompt.value = true;
     } else {
-      error.value = apiError.response?.data?.message || `Payment failed: ${err}`;
+      error.value =
+        apiError.response?.data?.message || `Payment failed: ${err}`;
     }
     console.error("Payment failed:", error.value);
     emit("payment-error", error.value);
@@ -229,9 +253,15 @@ function redirectToLogin() {
     </div>
 
     <!-- Payment Form -->
-    <form v-if="stripeLoaded && !showLoginPrompt" @submit.prevent="handleSubmit" class="space-y-4">
+    <form
+      v-if="stripeLoaded && !showLoginPrompt"
+      @submit.prevent="handleSubmit"
+      class="space-y-4"
+    >
       <div>
-        <label class="block text-sm font-medium text-gray-700">Amount ($)</label>
+        <label class="block text-sm font-medium text-gray-700"
+          >Amount ($)</label
+        >
         <input
           v-model.number="amount"
           type="number"

@@ -176,21 +176,7 @@ export const documentService = {
   },
 };
 
-// Invoice service
-export const invoiceService = {
-  getInvoices(projectId: string) {
-    return apiClient.get(`/projects/${projectId}/invoices`);
-  },
-  createInvoice(projectId: string, invoice: any) {
-    return apiClient.post(`/projects/${projectId}/invoices`, invoice);
-  },
-  markAsPaid(projectId: string, id: string) {
-    return apiClient.patch(`/projects/${projectId}/invoices/${id}/pay`);
-  },
-  deleteInvoice(projectId: string, id: string) {
-    return apiClient.delete(`/projects/${projectId}/invoices/${id}`);
-  },
-};
+
 
 // Vendor service
 export const vendorService = {
@@ -217,7 +203,7 @@ export const userService = {
     return apiClient.get("/users");
   },
   deleteUser(id: string) {
-    return apiClient.delete(`/users/${id}`);
+    return apiClient.delete(`/users\/${id}`);
   },
 };
 

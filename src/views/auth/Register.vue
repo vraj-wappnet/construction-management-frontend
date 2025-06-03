@@ -2,9 +2,11 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/auth";
+import { useToastStore } from "../../stores/toast";
 
 const router = useRouter();
 const authStore = useAuthStore();
+const toastStore = useToastStore();
 
 const firstName = ref("");
 const lastName = ref("");
@@ -39,8 +41,43 @@ const validatePasswords = () => {
   return true;
 };
 
+// const register = async () => {
+//   // Validate required fields
+//   if (
+//     !firstName.value ||
+//     !lastName.value ||
+//     !email.value ||
+//     !password.value ||
+//     !confirmPassword.value ||
+//     !phone.value ||
+//     !company.value
+//   ) {
+//     passwordError.value = "All fields are required";
+//     return;
+//   }
+
+//   if (!validatePasswords()) return;
+
+//   loading.value = true;
+//   try {
+//     await authStore.register({
+//       email: email.value,
+//       password: password.value,
+//       firstName: firstName.value,
+//       lastName: lastName.value,
+//       role: role.value.toLowerCase(), // Convert role to lowercase to match API expectation
+//       phone: phone.value,
+//       company: company.value,
+//     });
+//     router.push("/dashboard"); // Redirect to dashboard or desired route after successful registration
+//   } catch (error) {
+//     passwordError.value = "Registration failed. Please try again.";
+//   } finally {
+//     loading.value = false;
+//   }
+// };
+// In your register component
 const register = async () => {
-  // Validate required fields
   if (
     !firstName.value ||
     !lastName.value ||
@@ -50,7 +87,7 @@ const register = async () => {
     !phone.value ||
     !company.value
   ) {
-    passwordError.value = "All fields are required";
+    toastStore.error("All fields are required");
     return;
   }
 
@@ -63,13 +100,14 @@ const register = async () => {
       password: password.value,
       firstName: firstName.value,
       lastName: lastName.value,
-      role: role.value.toLowerCase(), // Convert role to lowercase to match API expectation
+      role: role.value.toLowerCase(),
       phone: phone.value,
       company: company.value,
     });
-    router.push("/dashboard"); // Redirect to dashboard or desired route after successful registration
+    toastStore.success("Registration successful! Redirecting to dashboard...");
+    router.push("/dashboard");
   } catch (error) {
-    passwordError.value = "Registration failed. Please try again.";
+    toastStore.error("Registration failed. Please try again.");
   } finally {
     loading.value = false;
   }

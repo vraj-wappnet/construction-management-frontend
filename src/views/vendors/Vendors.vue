@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/auth";
 import { vendorService } from "../../services/api";
+import * as Yup from 'yup';
 
 interface Vendor {
   id: string;
@@ -30,6 +31,16 @@ interface Toast {
   visible: boolean;
 }
 
+interface VendorForm {
+  name: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  address: string;
+  taxId: string;
+  isActive: boolean;
+}
+
 const authStore = useAuthStore();
 const router = useRouter();
 
@@ -40,8 +51,10 @@ const showCreateModal = ref(false);
 const showUpdateModal = ref(false);
 const showViewModal = ref(false);
 const selectedVendor = ref<Vendor | null>(null);
+const createFormErrors = ref<Record<string, string>>({});
+const updateFormErrors = ref<Record<string, string>>({});
 
-const createForm = ref({
+const createForm = ref<VendorForm>({
   name: "",
   contactPerson: "",
   email: "",
@@ -51,7 +64,7 @@ const createForm = ref({
   isActive: true,
 });
 
-const updateForm = ref({
+const updateForm = ref<VendorForm>({
   name: "",
   contactPerson: "",
   email: "",
@@ -62,6 +75,28 @@ const updateForm = ref({
 });
 
 const canManageVendors = computed(() => authStore.userRole === "admin");
+
+// Yup validation schema
+const vendorFormSchema = Yup.object().shape({
+  name: Yup.string()
+    .required('Name is required')
+    .min(3, 'Name must be at least 3 characters')
+    .max(100, 'Name cannot exceed 100 characters'),
+  contactPerson: Yup.string()
+    .max(100, 'Contact person cannot exceed 100 characters'),
+  email: Yup.string()
+    .required('Email is required')
+    .email('Invalid email format'),
+  phone: Yup.string()
+    .matches(/^\+?\d{10,15}$/, 'Phone number must be 10-15 digits, optionally starting with +')
+    .nullable(),
+  address: Yup.string()
+    .max(500, 'Address cannot exceed 500 characters'),
+  taxId: Yup.string()
+    .required('Tax ID is required')
+    .matches(/^[A-Z0-9-]{5,20}$/, 'Tax ID must be 5-20 alphanumeric characters or hyphens'),
+  isActive: Yup.boolean(),
+});
 
 const fetchVendors = async () => {
   if (!authStore.isAuthenticated) {
@@ -89,24 +124,11 @@ const createVendor = async () => {
     showToast("You are not authorized to create vendors", "error");
     return;
   }
-  if (
-    !createForm.value.name ||
-    !createForm.value.email ||
-    !createForm.value.taxId
-  ) {
-    showToast("Name, email, and tax ID are required", "error");
-    return;
-  }
   try {
-    const vendorData = {
-      name: createForm.value.name,
-      contactPerson: createForm.value.contactPerson,
-      email: createForm.value.email,
-      phone: createForm.value.phone,
-      address: createForm.value.address,
-      taxId: createForm.value.taxId,
-      isActive: createForm.value.isActive,
-    };
+    await vendorFormSchema.validate(createForm.value, { abortEarly: false });
+    createFormErrors.value = {};
+
+    const vendorData = { ...createForm.value };
     await vendorService.createVendor(vendorData);
     await fetchVendors();
     showCreateModal.value = false;
@@ -121,11 +143,22 @@ const createVendor = async () => {
     };
     showToast("Vendor created successfully", "success");
   } catch (err: unknown) {
-    const apiError = err as ApiError;
-    showToast(
-      apiError.response?.data?.message || "Failed to create vendor",
-      "error"
-    );
+    if (err instanceof Yup.ValidationError) {
+      const errors: Record<string, string> = {};
+      err.inner.forEach((error: any) => {
+        if (error.path) {
+          errors[error.path] = error.message;
+        }
+      });
+      createFormErrors.value = errors;
+      showToast("Please correct the form errors", "error");
+    } else {
+      const apiError = err as ApiError;
+      showToast(
+        apiError.response?.data?.message || "Failed to create vendor",
+        "error"
+      );
+    }
   }
 };
 
@@ -149,15 +182,7 @@ const editVendor = async (vendor: Vendor) => {
     return;
   }
   selectedVendor.value = vendor;
-  updateForm.value = {
-    name: vendor.name,
-    contactPerson: vendor.contactPerson,
-    email: vendor.email,
-    phone: vendor.phone,
-    address: vendor.address,
-    taxId: vendor.taxId,
-    isActive: vendor.isActive,
-  };
+  updateForm.value = { ...vendor };
   showUpdateModal.value = true;
 };
 
@@ -166,35 +191,33 @@ const updateVendor = async () => {
     showToast("You are not authorized to update vendors", "error");
     return;
   }
-  if (
-    !updateForm.value.name ||
-    !updateForm.value.email ||
-    !updateForm.value.taxId
-  ) {
-    showToast("Name, email, and tax ID are required", "error");
-    return;
-  }
   try {
-    const vendorData = {
-      name: updateForm.value.name,
-      contactPerson: updateForm.value.contactPerson,
-      email: updateForm.value.email,
-      phone: updateForm.value.phone,
-      address: updateForm.value.address,
-      taxId: updateForm.value.taxId,
-      isActive: updateForm.value.isActive,
-    };
+    await vendorFormSchema.validate(updateForm.value, { abortEarly: false });
+    updateFormErrors.value = {};
+
+    const vendorData = { ...updateForm.value };
     await vendorService.updateVendor(selectedVendor.value.id, vendorData);
     await fetchVendors();
     showUpdateModal.value = false;
     selectedVendor.value = null;
     showToast("Vendor updated successfully", "success");
   } catch (err: unknown) {
-    const apiError = err as ApiError;
-    showToast(
-      apiError.response?.data?.message || "Failed to update vendor",
-      "error"
-    );
+    if (err instanceof Yup.ValidationError) {
+      const errors: Record<string, string> = {};
+      err.inner.forEach((error: any) => {
+        if (error.path) {
+          errors[error.path] = error.message;
+        }
+      });
+      updateFormErrors.value = errors;
+      showToast("Please correct the form errors", "error");
+    } else {
+      const apiError = err as ApiError;
+      showToast(
+        apiError.response?.data?.message || "Failed to update vendor",
+        "error"
+      );
+    }
   }
 };
 
@@ -481,61 +504,67 @@ onMounted(fetchVendors);
         <h2 class="text-xl font-semibold text-gray-900 mb-6">Create Vendor</h2>
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Name</label>
+            <label class="block text-sm font-medium text-gray-700">Name <span class="text-red-500">*</span></label>
             <input
               v-model="createForm.name"
               type="text"
               required
-              class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+              class="mt-1 w-full h-10 px-2 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-colors duration-200"
+              :class="{ 'border-red-500': createFormErrors.name }"
             />
+            <p v-if="createFormErrors.name" class="mt-1 text-sm text-red-500">{{ createFormErrors.name }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700"
-              >Contact Person</label
-            >
+            <label class="block text-sm font-medium text-gray-700">Contact Person</label>
             <input
               v-model="createForm.contactPerson"
               type="text"
-              class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+              class="mt-1 w-full h-10 px-2 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-colors duration-200"
+              :class="{ 'border-red-500': createFormErrors.contactPerson }"
             />
+            <p v-if="createFormErrors.contactPerson" class="mt-1 text-sm text-red-500">{{ createFormErrors.contactPerson }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Email</label>
+            <label class="block text-sm font-medium text-gray-700">Email <span class="text-red-500">*</span></label>
             <input
               v-model="createForm.email"
               type="email"
               required
-              class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+              class="mt-1 w-full h-10 px-2 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-colors duration-200"
+              :class="{ 'border-red-500': createFormErrors.email }"
             />
+            <p v-if="createFormErrors.email" class="mt-1 text-sm text-red-500">{{ createFormErrors.email }}</p>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Phone</label>
             <input
               v-model="createForm.phone"
               type="text"
-              class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+              class="mt-1 w-full h-10 px-2 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-colors duration-200"
+              :class="{ 'border-red-500': createFormErrors.phone }"
             />
+            <p v-if="createFormErrors.phone" class="mt-1 text-sm text-red-500">{{ createFormErrors.phone }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700"
-              >Address</label
-            >
+            <label class="block text-sm font-medium text-gray-700">Address</label>
             <textarea
               v-model="createForm.address"
               rows="3"
-              class="mt-1 w-full px-3 py-2 rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+              class="mt-1 w-full px-2 py-2 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-colors duration-200"
+              :class="{ 'border-red-500': createFormErrors.address }"
             ></textarea>
+            <p v-if="createFormErrors.address" class="mt-1 text-sm text-red-500">{{ createFormErrors.address }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700"
-              >Tax ID</label
-            >
+            <label class="block text-sm font-medium text-gray-700">Tax ID <span class="text-red-500">*</span></label>
             <input
               v-model="createForm.taxId"
               type="text"
               required
-              class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+              class="mt-1 w-full h-10 px-2 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-colors duration-200"
+              :class="{ 'border-red-500': createFormErrors.taxId }"
             />
+            <p v-if="createFormErrors.taxId" class="mt-1 text-sm text-red-500">{{ createFormErrors.taxId }}</p>
           </div>
           <div class="flex items-center">
             <input
@@ -543,9 +572,7 @@ onMounted(fetchVendors);
               type="checkbox"
               class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
             />
-            <label class="ml-2 block text-sm font-medium text-gray-700"
-              >Active</label
-            >
+            <label class="ml-2 block text-sm font-medium text-gray-700">Active</label>
           </div>
           <div class="flex justify-end space-x-4">
             <button
@@ -578,70 +605,75 @@ onMounted(fetchVendors);
         <h2 class="text-xl font-semibold text-gray-900 mb-6">Update Vendor</h2>
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Name</label>
+            <label class="block text-sm font-medium text-gray-700">Name <span class="text-red-500">*</span></label>
             <input
               v-model="updateForm.name"
               type="text"
               required
-              class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+              class="mt-1 w-full h-10 px-2 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-colors duration-200"
+              :class="{ 'border-red-500': updateFormErrors.name }"
             />
+            <p v-if="updateFormErrors.name" class="mt-1 text-sm text-red-500">{{ updateFormErrors.name }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700"
-              >Contact Person</label
-            >
+            <label class="block text-sm font-medium text-gray-700">Contact Person</label>
             <input
               v-model="updateForm.contactPerson"
               type="text"
-              class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+              class="mt-1 w-full h-10 px-2 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-colors duration-200"
+              :class="{ 'border-red-500': updateFormErrors.contactPerson }"
             />
+            <p v-if="updateFormErrors.contactPerson" class="mt-1 text-sm text-red-500">{{ updateFormErrors.contactPerson }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Email</label>
+            <label class="block text-sm font-medium text-gray-700">Email <span class="text-red-500">*</span></label>
             <input
               v-model="updateForm.email"
               type="email"
               required
-              class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+              class="mt-1 w-full h-10 px-2 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-colors duration-200"
+              :class="{ 'border-red-500': updateFormErrors.email }"
             />
+            <p v-if="updateFormErrors.email" class="mt-1 text-sm text-red-500">{{ updateFormErrors.email }}</p>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Phone</label>
             <input
               v-model="updateForm.phone"
               type="text"
-              class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+              class="mt-1 w-full h-10 px-2 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-colors duration-200"
+              :class="{ 'border-red-500': updateFormErrors.phone }"
             />
+            <p v-if="updateFormErrors.phone" class="mt-1 text-sm text-red-500">{{ updateFormErrors.phone }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700"
-              >Address</label
-            >
+            <label class="block text-sm font-medium text-gray-700">Address</label>
             <textarea
               v-model="updateForm.address"
               rows="3"
-              class="mt-1 w-full px-3 py-2 rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+              class="mt-1 w-full px-2 py-2 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-colors duration-200"
+              :class="{ 'border-red-500': updateFormErrors.address }"
             ></textarea>
+            <p v-if="updateFormErrors.address" class="mt-1 text-sm text-red-500">{{ updateFormErrors.address }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700"
-              >Tax ID</label
-            >
+            <label class="block text-sm font-medium text-gray-700">Tax ID <span class="text-red-500">*</span></label>
             <input
               v-model="updateForm.taxId"
               type="text"
               required
-              class="mt-1 w-full h-10 px-3 rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+              class="mt-1 w-full h-10 px-2 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-colors duration-200"
+              :class="{ 'border-red-500': updateFormErrors.taxId }"
             />
+            <p v-if="updateFormErrors.taxId" class="mt-1 text-sm text-red-500">{{ updateFormErrors.taxId }}</p>
           </div>
           <div class="flex items-center">
             <input
+              v-model="updateForm.isActive"
               type="checkbox"
               class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
             />
-            <label class="ml-2 block text-sm font-medium text-gray-700"
-              >Active</label
-            >
+            <label class="ml-2 block text-sm font-medium text-gray-700">Active</label>
           </div>
           <div class="flex justify-end space-x-4">
             <button
@@ -678,9 +710,7 @@ onMounted(fetchVendors);
             <p class="mt-1 text-sm text-gray-900">{{ selectedVendor.name }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700"
-              >Contact Person</label
-            >
+            <label class="block text-sm font-medium text-gray-700">Contact Person</label>
             <p class="mt-1 text-sm text-gray-900">
               {{ selectedVendor.contactPerson || "N/A" }}
             </p>
@@ -696,23 +726,17 @@ onMounted(fetchVendors);
             </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700"
-              >Address</label
-            >
+            <label class="block text-sm font-medium text-gray-700">Address</label>
             <p class="mt-1 text-sm text-gray-900">
               {{ selectedVendor.address || "N/A" }}
             </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700"
-              >Tax ID</label
-            >
+            <label class="block text-sm font-medium text-gray-700">Tax ID</label>
             <p class="mt-1 text-sm text-gray-900">{{ selectedVendor.taxId }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700"
-              >Status</label
-            >
+            <label class="block text-sm font-medium text-gray-700">Status</label>
             <p
               :class="[
                 'mt-1 text-sm font-semibold',
@@ -737,6 +761,20 @@ onMounted(fetchVendors);
 </template>
 
 <style scoped>
+/* Ensure text collides with border by reducing padding */
+input,
+textarea {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* Darker border on focus */
+input:focus,
+textarea:focus {
+  border-color: #4338ca; /* Darker indigo */
+  box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.2);
+}
+
 /* Ensure Tailwind transitions work smoothly */
 .transition-all {
   transition-property: all;

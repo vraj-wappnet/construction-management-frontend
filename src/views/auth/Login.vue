@@ -35,7 +35,7 @@ const login = async () => {
     } else {
       toastStore.error(authStore.error, 5000);
     }
-  } catch (error) {
+  } catch (error : any) {
     const errorMessage =
       authStore.error ||
       error.response?.data?.message ||

@@ -51,7 +51,10 @@ apiClient.interceptors.response.use(
   (error) => {
     // Handle 401 Unauthorized errors
     if (error.response && error.response.status === 401) {
-      console.error(`401 Unauthorized for ${error.config.url}:`, error.response.data);
+      console.error(
+        `401 Unauthorized for ${error.config.url}:`,
+        error.response.data
+      );
       // Do not remove token immediately; let the component decide
       // Optionally log additional details
       console.log("Request headers:", error.config.headers);
@@ -112,6 +115,11 @@ export const projectService = {
 
   async confirmPayment(data: { paymentIntentId: string }) {
     return await apiClient.post("/payments/confirm", data);
+  },
+
+  // Add getPaymentHistory method
+  async getPaymentHistory() {
+    return await apiClient.get("/payments");
   },
 };
 
@@ -175,8 +183,6 @@ export const documentService = {
     });
   },
 };
-
-
 
 // Vendor service
 export const vendorService = {

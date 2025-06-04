@@ -2,10 +2,20 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { projectService } from "../../services/api";
+import * as Yup from 'yup';
 
 const router = useRouter();
 
-const project = ref({
+interface ProjectForm {
+  name: string;
+  location: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+  status: string;
+}
+
+const project = ref<ProjectForm>({
   name: "",
   location: "",
   startDate: "",
@@ -16,26 +26,56 @@ const project = ref({
 
 const loading = ref(false);
 const error = ref<string | null>(null);
+const formErrors = ref<Record<string, string>>({});
+
+// Yup validation schema
+const projectFormSchema = Yup.object().shape({
+  name: Yup.string()
+    .required('Project name is required')
+    .min(3, 'Name must be at least 3 characters')
+    .max(100, 'Name cannot exceed 100 characters'),
+  location: Yup.string()
+    .required('Location is required')
+    .min(3, 'Location must be at least 3 characters')
+    .max(100, 'Location cannot exceed 100 characters'),
+  startDate: Yup.date()
+    .required('Start date is required')
+    .typeError('Invalid start date'),
+  endDate: Yup.date()
+    .required('End date is required')
+    .min(Yup.ref('startDate'), 'End date cannot be before start date')
+    .typeError('Invalid end date'),
+  description: Yup.string()
+    .max(500, 'Description cannot exceed 500 characters'),
+  status: Yup.string()
+    .required('Status is required')
+    .oneOf(['Planning', 'In Progress', 'On Hold', 'Completed'], 'Invalid status'),
+});
 
 const createProject = async () => {
-  if (
-    !project.value.name ||
-    !project.value.location ||
-    !project.value.startDate ||
-    !project.value.endDate
-  ) {
-    error.value = "Please fill in all required fields";
-    return;
-  }
-
-  loading.value = true;
-  error.value = null;
-
   try {
+    // Validate form using Yup
+    await projectFormSchema.validate(project.value, { abortEarly: false });
+    formErrors.value = {};
+
+    loading.value = true;
+    error.value = null;
+
     await projectService.createProject(project.value);
     router.push("/projects");
   } catch (err: any) {
-    error.value = err.response?.data?.message || "Failed to create project";
+    if (err instanceof Yup.ValidationError) {
+      const errors: Record<string, string> = {};
+      err.inner.forEach((error: any) => {
+        if (error.path) {
+          errors[error.path] = error.message;
+        }
+      });
+      formErrors.value = errors;
+      error.value = "Please correct the form errors";
+    } else {
+      error.value = err.response?.data?.message || "Failed to create project";
+    }
   } finally {
     loading.value = false;
   }
@@ -65,7 +105,6 @@ const createProject = async () => {
             xmlns="http://www.w3.org/2000/svg"
             class="h-5 w-5 mr-2"
             fill="none"
-            viewColor="blue"
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
@@ -120,9 +159,11 @@ const createProject = async () => {
                 id="name"
                 v-model="project.name"
                 required
-                class="block w-full h-12 rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-base transition-all duration-200"
+                class="block w-full h-12 px-2 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-colors duration-200"
+                :class="{ 'border-red-500': formErrors.name }"
                 placeholder="Enter project name"
               />
+              <p v-if="formErrors.name" class="mt-1 text-sm text-red-500">{{ formErrors.name }}</p>
             </div>
 
             <div>
@@ -137,9 +178,11 @@ const createProject = async () => {
                 id="location"
                 v-model="project.location"
                 required
-                class="block w-full h-12 rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-base transition-all duration-200"
+                class="block w-full h-12 px-2 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-colors duration-200"
+                :class="{ 'border-red-500': formErrors.location }"
                 placeholder="Enter project location"
               />
+              <p v-if="formErrors.location" class="mt-1 text-sm text-red-500">{{ formErrors.location }}</p>
             </div>
 
             <div>
@@ -154,8 +197,10 @@ const createProject = async () => {
                 id="startDate"
                 v-model="project.startDate"
                 required
-                class="block w-full h-12 rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-base transition-all duration-200"
+                class="block w-full h-12 px-2 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-colors duration-200"
+                :class="{ 'border-red-500': formErrors.startDate }"
               />
+              <p v-if="formErrors.startDate" class="mt-1 text-sm text-red-500">{{ formErrors.startDate }}</p>
             </div>
 
             <div>
@@ -170,8 +215,10 @@ const createProject = async () => {
                 id="endDate"
                 v-model="project.endDate"
                 required
-                class="block w-full h-12 rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-base transition-all duration-200"
+                class="block w-full h-12 px-2 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-colors duration-200"
+                :class="{ 'border-red-500': formErrors.endDate }"
               />
+              <p v-if="formErrors.endDate" class="mt-1 text-sm text-red-500">{{ formErrors.endDate }}</p>
             </div>
 
             <div class="sm:col-span-2">
@@ -185,9 +232,11 @@ const createProject = async () => {
                 id="description"
                 v-model="project.description"
                 rows="6"
-                class="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-base transition-all duration-200"
+                class="block w-full px-2 py-2 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-colors duration-200"
+                :class="{ 'border-red-500': formErrors.description }"
                 placeholder="Describe your project..."
               ></textarea>
+              <p v-if="formErrors.description" class="mt-1 text-sm text-red-500">{{ formErrors.description }}</p>
             </div>
 
             <div>
@@ -200,13 +249,15 @@ const createProject = async () => {
               <select
                 id="status"
                 v-model="project.status"
-                class="block w-full h-12 rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-base transition-all duration-200"
+                class="block w-full h-12 px-2 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-colors duration-200"
+                :class="{ 'border-red-500': formErrors.status }"
               >
                 <option value="Planning">Planning</option>
                 <option value="In Progress">In Progress</option>
                 <option value="On Hold">On Hold</option>
                 <option value="Completed">Completed</option>
               </select>
+              <p v-if="formErrors.status" class="mt-1 text-sm text-red-500">{{ formErrors.status }}</p>
             </div>
           </div>
 
@@ -252,3 +303,37 @@ const createProject = async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Ensure text collides with border by reducing padding */
+input,
+textarea,
+select {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* Darker border on focus */
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: #1e40af; /* Darker blue */
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.2);
+}
+
+/* Animation for error message */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>

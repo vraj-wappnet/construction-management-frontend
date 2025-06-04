@@ -11,7 +11,7 @@ const projects = ref<any[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const searchQuery = ref("");
-const statusFilter = ref("In Progress"); // Default to In Progress for accepted projects
+const statusFilter = ref("All"); // Default to show all statuses
 const showAssignModal = ref(false);
 const selectedProject = ref<any>(null);
 const siteEngineers = ref<any[]>([]);
@@ -74,7 +74,7 @@ const filteredProjects = computed(() => {
         project.location.toLowerCase().includes(query)
     );
   }
-  if (statusFilter.value !== "All") {
+  if (statusFilter.value && statusFilter.value !== "All") {
     filtered = filtered.filter(
       (project) => project.status === statusFilter.value
     );

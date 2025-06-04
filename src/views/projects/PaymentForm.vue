@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { loadStripe } from "@stripe/stripe-js";
 import { StripeElements, StripeElement } from "vue-stripe-js";
 import { projectService } from "../../services/api";
+import { useToastStore } from "../../stores/toast";
 import type {
   StripeElementsOptionsMode,
   StripePaymentElementOptions,
@@ -13,6 +14,12 @@ interface Props {
   payeeId: number;
 }
 
+interface Toast {
+  message: string;
+  type: "success" | "error";
+  visible: boolean;
+}
+
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
@@ -21,7 +28,13 @@ const emit = defineEmits<{
   (e: "close"): void;
 }>();
 
-console.log("Environment variables:", import.meta.env);
+const toastStore = useToastStore();
+const toast = ref<Toast>({
+  message: "",
+  type: "success",
+  visible: false,
+});
+
 const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as
   | string
   | undefined;
@@ -69,6 +82,7 @@ const paymentComponent = ref();
     error.value = `Failed to load Stripe: ${err}`;
     console.error("Stripe load error:", err);
     emit("payment-error", error.value);
+    toastStore.error(error.value, 7000); // Show error toast
   }
 })();
 
@@ -77,6 +91,7 @@ async function handleSubmit() {
     error.value = "Payment form not initialized";
     console.error("Payment form error:", error.value);
     emit("payment-error", error.value);
+    toastStore.error(error.value, 7000); // Show error toast
     return;
   }
 
@@ -89,6 +104,7 @@ async function handleSubmit() {
     error.value = "Invalid payeeId: must be a positive integer";
     console.error("Payment form error:", error.value);
     emit("payment-error", error.value);
+    toastStore.error(error.value, 7000); // Show error toast
     return;
   }
 
@@ -96,6 +112,7 @@ async function handleSubmit() {
     error.value = "Invalid projectId: must be a positive integer";
     console.error("Payment form error:", error.value);
     emit("payment-error", error.value);
+    toastStore.error(error.value, 7000); // Show error toast
     return;
   }
 
@@ -103,6 +120,7 @@ async function handleSubmit() {
     error.value = "Amount must be at least $1.00";
     console.error("Payment form error:", error.value);
     emit("payment-error", error.value);
+    toastStore.error(error.value, 7000); // Show error toast
     return;
   }
 
@@ -122,6 +140,7 @@ async function handleSubmit() {
       error.value = "Authentication required. Please log in.";
       showLoginPrompt.value = true;
       emit("payment-error", error.value);
+      toastStore.error(error.value, 7000); // Show error toast
       return;
     }
     console.log("Token for payment request:", token.substring(0, 20) + "...");
@@ -147,10 +166,8 @@ async function handleSubmit() {
     clientSecret.value = response.data.clientSecret;
     paymentId.value = response.data.paymentId;
 
-    // Ensure clientSecret.value is not null before assigning
-    if (clientSecret.value) {
-      // elementsOptions.value.clientSecret = clientSecret.value;
-    } else {
+    toastStore.success("Payment created successfully!", 7000);
+    if (!clientSecret.value) {
       throw new Error("Client secret is null");
     }
     elementsOptions.value.amount = amount.value;
@@ -204,6 +221,7 @@ async function handleSubmit() {
     }
     console.error("Payment failed:", error.value);
     emit("payment-error", error.value);
+    toastStore.error(error.value, 7000); // Show error toast
   } finally {
     loading.value = false;
   }
@@ -218,7 +236,20 @@ function redirectToLogin() {
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-4 relative">
+    <!-- Toast Notification -->
+    <div
+      v-if="toast.visible"
+      :class="[
+        'fixed bottom-4 right-4 p-4 rounded-md shadow-lg z-1000',
+        toast.type === 'success'
+          ? 'bg-green-100 text-green-800'
+          : 'bg-red-100 text-red-800',
+      ]"
+    >
+      {{ toast.message }}
+    </div>
+
     <!-- Error Message -->
     <div v-if="error" class="bg-red-100 p-4 rounded-md">
       <div class="flex items-center">
@@ -325,3 +356,18 @@ function redirectToLogin() {
     </div>
   </div>
 </template>
+
+<style scoped>
+input,
+select {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* Darker border on focus */
+input:focus,
+select:focus {
+  border-color: #1e40af; /* Darker blue */
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.2);
+}
+</style>

@@ -542,7 +542,6 @@ const isPayeePaid = (projectId: number, payeeId: number) => {
         statusMatch,
         status: payment.status
       });
-      
       return projectMatch && payeeMatch && statusMatch;
     }
   );

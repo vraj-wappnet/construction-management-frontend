@@ -244,8 +244,7 @@ const logout = () => {
                   </svg>
                 </div>
                 <div>
-                  <h2 class="text-white font-bold text-xl">Dashboard</h2>
-                  <p class="text-gray-400 text-sm">Management Panel</p>
+                  <h2 class="text-white font-bold text-xl">Management Panel</h2>
                 </div>
               </div>
               <button

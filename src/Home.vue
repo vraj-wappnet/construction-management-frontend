@@ -65,7 +65,7 @@ onMounted(() => {
   <div class="min-h-screen bg-gray-900 font-sans overflow-x-hidden">
     <Navbar />
     <section
-      class="relative h-[70vh] bg-gradient-to-br from-slate-900/95 to-blue-900/95 text-white py-28 overflow-hidden backdrop-blur-sm"
+      class="relative min-h-screen bg-gradient-to-br from-slate-900/95 to-blue-900/95 text-white pt-32 pb-20 overflow-hidden backdrop-blur-sm flex items-center"
     >
       <!-- Subtle Background Pattern -->
       <div class="absolute inset-0 bg-grid-pattern opacity-10"></div>
@@ -104,13 +104,13 @@ onMounted(() => {
           "
         >
           <h1
-            class="text-5xl md:text-7xl font-extrabold mb-6 leading-tight tracking-tight"
+            class="text-5xl md:text-7xl lg:text-8xl font-extrabold mb-8 leading-tight tracking-tight"
           >
             Build Smarter with
             <span class="block bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">ConstructionSync</span>
           </h1>
           <p
-            class="text-lg md:text-xl mb-10 max-w-3xl mx-auto leading-relaxed opacity-90 font-medium text-gray-300"
+            class="text-xl md:text-2xl mb-12 max-w-4xl mx-auto leading-relaxed opacity-90 font-medium text-gray-300"
           >
             Streamline your construction projects with our all-in-one management
             platform designed for efficiency and precision.

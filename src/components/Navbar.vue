@@ -40,7 +40,7 @@ onUnmounted(() => {
     class="fixed w-full top-0 z-50 transition-all duration-300 font-sans"
     :class="isScrolled ? 'bg-gradient-to-br from-slate-900/95 to-blue-900/95 backdrop-blur-xl shadow-xl border-b border-white/10' : 'bg-gradient-to-br from-slate-900/95 to-blue-900/95 backdrop-blur-sm shadow-md border-b border-white/10'"
   >
-    <div class="container mx-auto px-6 py-4">
+    <div class="container mx-auto px-1 py-3">
       <div class="flex items-center justify-between">
         <!-- Logo -->
         <router-link 
@@ -104,7 +104,7 @@ onUnmounted(() => {
             </router-link>
             <router-link
               to="/register"
-              class="group px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-400 hover:to-purple-500 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg relative"
+              class="group px-3 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-400 hover:to-purple-500 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg relative"
             >
               <span class="flex items-center space-x-2 relative z-10">
                 <span>Get Started</span>

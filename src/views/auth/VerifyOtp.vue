@@ -32,13 +32,18 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
-    <h2 class="text-center text-2xl font-bold text-gray-700 mb-6">Verify OTP</h2>
-    
-    <div v-if="authStore.error" class="mb-4 bg-red-50 p-4 rounded-md">
+  <div class="w-full max-w-md space-y-6">
+    <div class="text-center">
+      <h2 class="text-2xl font-bold text-gray-900">Verify OTP</h2>
+      <p class="mt-2 text-sm text-gray-600">
+        We've sent a 6-digit OTP to {{ email }}
+      </p>
+    </div>
+
+    <div v-if="authStore.error" class="rounded-md bg-red-50 p-4">
       <div class="flex">
         <div class="flex-shrink-0">
-          <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
           </svg>
         </div>
@@ -47,12 +52,8 @@ onMounted(() => {
         </div>
       </div>
     </div>
-    
-    <p class="text-sm text-gray-500 mb-6">
-      We've sent a 6-digit OTP to {{ email }}. Please enter it below to verify your identity.
-    </p>
-    
-    <form class="space-y-6" @submit.prevent="verifyOtp">
+
+    <form class="mt-6 space-y-6" @submit.prevent="verifyOtp">
       <div>
         <label for="otp" class="block text-sm font-medium text-gray-700">OTP Code</label>
         <div class="mt-1">
@@ -82,7 +83,13 @@ onMounted(() => {
     </form>
     
     <div class="mt-6 text-center">
-      <router-link :to="{ name: 'forgot-password' }" class="text-sm font-medium text-primary-600 hover:text-primary-500">
+      <router-link 
+        :to="{ 
+          name: 'forgot-password', 
+          query: { email: email } 
+        }" 
+        class="text-sm font-medium text-primary-600 hover:text-primary-500"
+      >
         Resend OTP
       </router-link>
     </div>

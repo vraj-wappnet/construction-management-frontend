@@ -533,30 +533,6 @@ const dashboardStats = ref([
                       </div>
                     </div>
                   </div>
-
-                  <!-- Progress Section -->
-                  <!-- <div class="space-y-3">
-                    <div class="flex items-center justify-between">
-                      <span class="text-sm font-semibold text-slate-700"
-                        >Progress</span
-                      >
-                      <span
-                        class="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent"
-                      >
-                        {{ project.progress || 0 }}%
-                      </span>
-                    </div>
-                    <div
-                      class="w-full bg-slate-200 rounded-full h-3 overflow-hidden"
-                    >
-                      <div
-                        class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-1000 ease-out shadow-sm"
-                        :style="`width: ${project.progress || 0}%`"
-                      ></div>
-                    </div>
-                  </div> -->
-
-                  <!-- Updated Info -->
                   <div
                     class="flex items-center justify-between mt-4 pt-4 border-t border-slate-200/50"
                   >

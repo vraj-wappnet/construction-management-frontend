@@ -183,19 +183,74 @@ const routes: RouteRecordRaw[] = [
 // Create router
 const router = createRouter({
   history: createWebHistory(),
-  routes,
+  routes: [
+    ...routes,
+    // Auth routes
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('../views/auth/Login.vue'),
+      meta: { requiresAuth: false, layout: 'auth' }
+    },
+    {
+      path: '/forgot-password',
+      name: 'forgot-password',
+      component: () => import('../views/auth/ForgotPassword.vue'),
+      meta: { requiresAuth: false, layout: 'auth' }
+    },
+    {
+      path: '/verify-otp',
+      name: 'verify-otp',
+      component: () => import('../views/auth/VerifyOtp.vue'),
+      meta: { requiresAuth: false, layout: 'auth' },
+      props: (route) => ({
+        email: route.query.email,
+        otp: route.query.otp
+      })
+    },
+    {
+      path: '/reset-password',
+      name: 'reset-password',
+      component: () => import('../views/auth/ResetPassword.vue'),
+      meta: { requiresAuth: false, layout: 'auth' },
+      props: (route) => ({
+        email: route.query.email,
+        otp: route.query.otp
+      })
+    }
+  ]
 });
-347414;
 
-// Navigation guard
-router.beforeEach((to, from, next) => {
+// Navigation guard to check authentication and route requirements
+router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore();
-  const requiresAuth = to.meta.requiresAuth;
+  const requiresAuth = to.meta.requiresAuth as boolean | undefined;
   const requiredRoles = to.meta.roles as string[] | undefined;
 
-  // Check if route requires authentication
+  // Redirect to login if route requires authentication and user is not authenticated
   if (requiresAuth && !authStore.isAuthenticated) {
-    next({ name: "Login" });
+    next({ name: 'login' });
+    return;
+  }
+
+  // Redirect to home if user is authenticated and tries to access auth pages
+  if (
+    (to.name === 'login' || 
+     to.name === 'register' || 
+     to.name === 'forgot-password' ||
+     to.name === 'verify-otp') && 
+    authStore.isAuthenticated
+  ) {
+    next({ name: 'home' });
+    return;
+  }
+
+  // Ensure email is present for verify-otp and reset-password routes
+  if (
+    (to.name === 'verify-otp' || to.name === 'reset-password') && 
+    !to.query.email
+  ) {
+    next({ name: 'forgot-password' });
     return;
   }
 
@@ -203,19 +258,9 @@ router.beforeEach((to, from, next) => {
   if (requiredRoles && authStore.isAuthenticated) {
     const hasRequiredRole = requiredRoles.includes(authStore.userRole);
     if (!hasRequiredRole) {
-      next({ name: "Dashboard" });
+      next({ name: 'dashboard' });
       return;
     }
-  }
-
-  // If going to auth page or home while authenticated, redirect to dashboard
-  if (
-    !requiresAuth &&
-    authStore.isAuthenticated &&
-    (to.meta.layout === "auth" || to.name === "Home")
-  ) {
-    next({ name: "Dashboard" });
-    return;
   }
 
   next();

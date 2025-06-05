@@ -1,41 +1,60 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useAuthStore } from '../../stores/auth';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 
 const authStore = useAuthStore();
 const router = useRouter();
+const route = useRoute();
 
 const email = ref('');
 const loading = ref(false);
 const successMessage = ref('');
 
+// Check for email in query params on component mount
+onMounted(() => {
+  if (route.query.email) {
+    email.value = route.query.email.toString();
+  }
+});
+
 const sendResetLink = async () => {
   if (!email.value) return;
   
   loading.value = true;
-  await authStore.forgotPassword({ email: email.value });
+  successMessage.value = '';
+  authStore.error = null;
   
-  if (!authStore.error) {
-    successMessage.value = `OTP has been sent to ${email.value}`;
-    // Navigate to verify OTP page after a short delay
-    setTimeout(() => {
-      router.push({ name: 'verify-otp', query: { email: email.value } });
-    }, 1500);
+  try {
+    await authStore.forgotPassword({ email: email.value });
+    
+    if (!authStore.error) {
+      successMessage.value = `OTP has been sent to ${email.value}`;
+      // Navigate to verify OTP page immediately without delay
+      router.push({ 
+        name: 'verify-otp', 
+        query: { email: email.value } 
+      });
+    }
+  } finally {
+    loading.value = false;
   }
-  
-  loading.value = false;
 };
 </script>
 
 <template>
-  <div>
-    <h2 class="text-center text-2xl font-bold text-gray-700 mb-6">Reset your password</h2>
-    
-    <div v-if="authStore.error" class="mb-4 bg-red-50 p-4 rounded-md">
+  <div class="w-full max-w-md space-y-6">
+    <div class="text-center">
+      <h2 class="text-2xl font-bold text-gray-900">Reset your password</h2>
+      <p class="mt-2 text-sm text-gray-600">
+        Enter your email address and we'll send you an OTP to reset your password.
+      </p>
+    </div>
+
+    <div v-if="authStore.error" class="rounded-md bg-red-50 p-4">
       <div class="flex">
         <div class="flex-shrink-0">
-          <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
           </svg>
         </div>
@@ -44,11 +63,11 @@ const sendResetLink = async () => {
         </div>
       </div>
     </div>
-    
-    <div v-if="successMessage" class="mb-4 bg-green-50 p-4 rounded-md">
+
+    <div v-if="successMessage" class="rounded-md bg-green-50 p-4">
       <div class="flex">
         <div class="flex-shrink-0">
-          <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
           </svg>
         </div>

@@ -86,22 +86,49 @@ const updateProfile = async () => {
     isUpdating.value = true;
     const formData = new FormData();
     formData.append("firstName", editForm.value.firstName);
-    formData.append("lastName", editForm.value.lastName);
+    formData.append("lastName", editForm.value.lastName || '');
     formData.append("email", editForm.value.email);
+    
     if (editForm.value.profilePicture) {
-      formData.append("profilePicture", editForm.value.profilePicture);
-      console.log(
-        "Uploading profile picture:",
-        editForm.value.profilePicture.name
-      );
+      formData.append('profilePicture', editForm.value.profilePicture);
+      console.log('Profile picture appended to form data');
     } else {
-      console.log("No profile picture selected for upload");
+      console.log('No profile picture selected for upload');
     }
 
-    await profileService.updateProfile(formData);
-    await fetchProfile();
-    showEditModal.value = false;
-    showToast("Profile updated successfully", "success");
+    const response = await profileService.updateProfile(formData);
+    console.log('Profile update response:', response);
+    
+    if (response && response.data) {
+      const updatedUser = response.data;
+      
+      // Update the auth store with the updated user data
+      if (authStore.user) {
+        authStore.setUser({
+          ...authStore.user,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          email: updatedUser.email,
+          profilePicture: updatedUser.profilePicture || authStore.user.profilePicture,
+          phone: updatedUser.phone,
+          company: updatedUser.company
+        });
+      }
+      
+      // Also update the local profile data
+      if (profile.value) {
+        profile.value = {
+          ...profile.value,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          email: updatedUser.email,
+          profilePicture: updatedUser.profilePicture || profile.value.profilePicture
+        };
+      }
+      
+      showEditModal.value = false;
+      showToast("Profile updated successfully", "success");
+    }
   } catch (err: unknown) {
     const apiError = err as ApiError;
     console.error("Update profile error:", apiError);

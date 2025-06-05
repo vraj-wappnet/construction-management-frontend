@@ -529,8 +529,8 @@ const isPayeePaid = (projectId: number, payeeId: number) => {
   const paidStatuses = ['succeeded', 'paid', 'completed', 'payment_pending'];
   return payments.value.some(
     (payment) => {
-      const projectMatch = payment.project?.id === projectId || payment.projectId === projectId;
-      const payeeMatch = payment.payee?.id === payeeId || payment.payeeId === payeeId;
+      const projectMatch = payment.project?.id === projectId;
+      const payeeMatch = payment.payee?.id === payeeId;
       const statusMatch = payment.status && paidStatuses.includes(payment.status.toLowerCase());
       
       console.log('isPayeePaid check:', {
@@ -552,8 +552,8 @@ const hasPaymentInProgress = (projectId: number, payeeId: number) => {
   
   return payments.value.some(
     (payment) => {
-      const projectMatch = payment.project?.id === projectId || payment.projectId === projectId;
-      const payeeMatch = payment.payee?.id === payeeId || payment.payeeId === payeeId;
+      const projectMatch = payment.project?.id === projectId;
+      const payeeMatch = payment.payee?.id === payeeId;
       const statusMatch = payment.status && inProgressStatuses.includes(payment.status.toLowerCase());
       
       console.log('hasPaymentInProgress check:', {
@@ -583,11 +583,6 @@ const getPayeeOptions = (project: Project): Payee[] => {
   );
 };
 
-// const showToast = (message: string, type: "success" | "error") => {
-//   console.log("Showing toast:", { message, type });
-//   toast.value = { message, type, visible: true };
-//   setTimeout(() => (toast.value.visible = false), 3000);
-// };
 </script>
 
 <template>

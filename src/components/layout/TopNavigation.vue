@@ -149,57 +149,61 @@ onUnmounted(() => {
             </template>
 
             <template v-if="authStore.isAuthenticated">
-              <!-- Profile Picture -->
-              <router-link
-                to="/profile"
-                class="relative group rounded-full transition-all duration-300"
-                @click="closeMobileMenu"
-              >
-                <img
-                  v-if="authStore.user?.profilePicture"
-                  :src="authStore.user.profilePicture"
-                  alt="Profile Picture"
-                  class="w-8 h-8 rounded-full object-cover border-2 border-white/20 shadow-lg transition-transform duration-300 group-hover:scale-110"
-                />
-                <div
-                  v-else
-                  class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg transition-transform duration-300 group-hover:scale-110"
-                >
-                  {{ authStore.user?.firstName?.charAt(0).toUpperCase() }}
+              <div class="flex items-center space-x-2">
+                <!-- Profile Picture -->
+                <div class="relative">
+                  <router-link
+                    :to="{ name: 'Profile' }"
+                    class="relative z-10 rounded-full transition-all duration-300 block"
+                    @click="closeMobileMenu"
+                  >
+                    <img
+                      v-if="authStore.user?.profilePicture"
+                      :src="authStore.user.profilePicture"
+                      alt="Profile Picture"
+                      class="w-8 h-8 rounded-full object-cover border-2 border-white/20 shadow-lg transition-transform duration-300 hover:scale-110"
+                    />
+                    <div
+                      v-else
+                      class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg transition-transform duration-300 hover:scale-110"
+                    >
+                      {{ authStore.user?.firstName?.charAt(0).toUpperCase() }}
+                    </div>
+                    <!-- Tooltip -->
+                    <div
+                      class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-slate-800/90 backdrop-blur-sm text-white text-sm rounded-lg opacity-0 hover:opacity-100 transition-all duration-300 z-50 shadow-xl border border-white/10 whitespace-nowrap pointer-events-none"
+                    >
+                      {{ authStore.user?.firstName }} {{ authStore.user?.lastName }}
+                      <div
+                        class="absolute bottom-full left-1/2 transform -translate-x-1/2 translate-y-1 w-2 h-2 bg-slate-800/90 border-t border-l border-white/10 rotate-45"
+                      ></div>
+                    </div>
+                  </router-link>
                 </div>
-                <!-- Tooltip -->
-                <div
-                  class="absolute top-full mt-2 px-3 py-2 bg-slate-800/90 backdrop-blur-sm text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 shadow-xl border border-white/10 whitespace-nowrap pointer-events-none"
-                >
-                  {{ authStore.user?.firstName }} {{ authStore.user?.lastName }}
-                  <div
-                    class="absolute bottom-full left-1/2 transform -translate-x-1/2 translate-y-1 w-2 h-2 bg-slate-800/90 border-t border-l border-white/10 rotate-45"
-                  ></div>
-                </div>
-              </router-link>
 
-              <button
-                @click="logout"
-                class="relative group flex items-center px-4 py-2 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-400/20 transition-all duration-300 font-medium text-sm"
-              >
-                <svg
-                  class="w-4 h-4 mr-2 transform group-hover:rotate-12 transition-transform text-gray-400 group-hover:text-red-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <button
+                  @click="logout"
+                  class="relative z-0 group flex items-center px-4 py-2 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-400/20 transition-all duration-300 font-medium text-sm"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  />
-                </svg>
-                <span class="relative z-10">Logout</span>
-                <span
-                  class="absolute inset-0 bg-gradient-to-r from-transparent via-red-500/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"
-                ></span>
-              </button>
+                  <svg
+                    class="w-4 h-4 mr-2 transform group-hover:rotate-12 transition-transform text-gray-400 group-hover:text-red-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
+                  <span class="relative z-10">Logout</span>
+                  <span
+                    class="absolute inset-0 bg-gradient-to-r from-transparent via-red-500/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"
+                  ></span>
+                </button>
+              </div>
             </template>
           </div>
         </div>

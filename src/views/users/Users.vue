@@ -203,7 +203,7 @@ onMounted(fetchUsers);
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <button
-                  v-if="canDeleteUsers && user.id !== authStore.user"
+                  v-if="canDeleteUsers && user.id !== authStore.user?.id"
                   @click="deleteUser(user.id)"
                   class="text-red-600 hover:text-red-800 font-semibold"
                 >
@@ -244,7 +244,7 @@ onMounted(fetchUsers);
           </div>
           <div class="mt-4 flex justify-end">
             <button
-              v-if="canDeleteUsers && user.id !== authStore.user"
+              v-if="canDeleteUsers && user.id !== authStore.user?.id"
               @click="deleteUser(user.id)"
               class="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200"
             >

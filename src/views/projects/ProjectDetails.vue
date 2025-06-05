@@ -10,7 +10,10 @@ const error = ref<string | null>(null);
 
 onMounted(async () => {
   try {
-    const projectId = route.params.id as string;
+    const projectId = Number(route.params.id);
+    if (isNaN(projectId)) {
+      throw new Error('Invalid project ID');
+    }
     const response = await projectService.getProject(projectId);
     project.value = response.data;
   } catch (err: any) {

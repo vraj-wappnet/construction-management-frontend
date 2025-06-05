@@ -76,11 +76,6 @@ const sendResetLink = async () => {
         </div>
       </div>
     </div>
-    
-    <p class="text-sm text-gray-500 mb-6">
-      Enter your email address and we'll send you an OTP code to reset your password.
-    </p>
-    
     <form class="space-y-6" @submit.prevent="sendResetLink">
       <div>
         <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>

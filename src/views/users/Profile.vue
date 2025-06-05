@@ -35,6 +35,7 @@ const profile = ref<UserProfile | null>(null);
 const loading = ref(true);
 const toast = ref<Toast>({ message: "", type: "success", visible: false });
 const showEditModal = ref(false);
+const showImageModal = ref(false);
 const isUpdating = ref(false);
 
 const editForm = ref({
@@ -172,8 +173,40 @@ onMounted(fetchProfile);
 
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50"
+    class="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 relative"
   >
+    <!-- Full Image Modal -->
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div 
+        v-if="showImageModal && profile?.profilePicture"
+        class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+        @click.self="showImageModal = false"
+      >
+        <div class="relative max-w-4xl w-full max-h-[90vh] flex flex-col">
+          <button
+            @click="showImageModal = false"
+            class="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors"
+            aria-label="Close fullscreen"
+          >
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <img 
+            :src="profile.profilePicture" 
+            :alt="`${profile.firstName}'s profile`"
+            class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
+          />
+        </div>
+      </div>
+    </Transition>
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12 max-w-7xl">
       <!-- Toast Notification -->
       <Transition
@@ -270,18 +303,27 @@ onMounted(fetchProfile);
           class="bg-gradient-to-r from-indigo-500 to-blue-600 p-6 flex items-center space-x-4"
         >
           <div class="relative">
-            <img
-              v-if="profile.profilePicture"
-              :src="profile.profilePicture"
-              alt="Profile Picture"
-              class="w-16 h-16 rounded-full object-cover border-2 border-white shadow-sm"
-            />
-            <div
-              v-else
-              class="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-semibold text-xl"
-            >
-              {{ profile.firstName[0]
-              }}{{ profile.lastName ? profile.lastName[0] : "" }}
+            <div class="relative">
+              <div v-if="profile.profilePicture" class="group cursor-pointer w-20 h-20" @click="showImageModal = true">
+                <div class="relative w-full h-full">
+                  <img
+                    :src="profile.profilePicture"
+                    :alt="`${profile.firstName}'s profile`"
+                    class="w-full h-full rounded-full object-cover border-2 border-white shadow-md transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div class="absolute inset-0 bg-black/20 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m0 0l3-3m-3 3L7 10" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div
+                v-else
+                class="w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-2xl shadow-md"
+              >
+                {{ profile.firstName?.charAt(0) || 'U' }}{{ profile.lastName?.charAt(0) || '' }}
+              </div>
             </div>
           </div>
           <div>
